@@ -12,7 +12,11 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 24, cache: npm }
       - run: npm ci
+        working-directory: frontend
       - run: npm run lint
+        working-directory: frontend
       - run: npm test -- --watch=false
+        working-directory: frontend
       - run: npm run build -- --configuration production
-      - run: docker build --tag taskplan-frontend:${{ github.sha }} .
+        working-directory: frontend
+      - run: docker build --tag taskplan-frontend:${{ github.sha }} frontend

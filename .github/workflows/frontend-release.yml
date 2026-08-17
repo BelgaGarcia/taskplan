@@ -22,10 +22,14 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 24, cache: npm }
       - run: npm ci
+        working-directory: frontend
       - run: npm run lint
+        working-directory: frontend
       - run: npm test -- --watch=false
+        working-directory: frontend
       - run: npm run build -- --configuration production
-      - run: docker build --tag taskplan-frontend:validation .
+        working-directory: frontend
+      - run: docker build --tag taskplan-frontend:validation frontend
   production:
     needs: validate
     runs-on: [self-hosted, linux, x64, taskplan-prod]
