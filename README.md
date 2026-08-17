@@ -2,37 +2,37 @@
 
 API backend do **TaskPlan**, sistema para gerenciamento, planejamento e acompanhamento de tarefas recorrentes.
 
-O projeto permite cadastrar tarefas, definir responsáveis e periodicidades, considerar feriados e dias não úteis, gerar automaticamente ocorrências, acompanhar execuções e consultar calendário e indicadores.
+O projeto permite cadastrar tarefas, definir responsÃ¡veis e periodicidades, considerar feriados e dias nÃ£o Ãºteis, gerar automaticamente ocorrÃªncias, acompanhar execuÃ§Ãµes e consultar calendÃ¡rio e indicadores.
 
-O backend está preparado para execução através de Docker, utilizando PostgreSQL e Redis.
+O backend estÃ¡ preparado para execuÃ§Ã£o atravÃ©s de Docker, utilizando PostgreSQL e Redis.
 
 ---
 
-## Visão geral
+## VisÃ£o geral
 
 O TaskPlan possui atualmente um MVP de backend com os seguintes recursos:
 
-* autenticação JWT;
-* refresh token com sessões armazenadas no Redis;
+* autenticaÃ§Ã£o JWT;
+* refresh token com sessÃµes armazenadas no Redis;
 * controle de acesso por perfil;
-* gerenciamento de usuários;
+* gerenciamento de usuÃ¡rios;
 * gerenciamento de cargos;
-* gerenciamento de funções;
+* gerenciamento de funÃ§Ãµes;
 * cadastro de periodicidades;
 * cadastro de feriados;
 * gerenciamento de tarefas;
-* geração automática de ocorrências;
+* geraÃ§Ã£o automÃ¡tica de ocorrÃªncias;
 * tratamento de finais de semana e feriados;
-* início e conclusão de ocorrências;
+* inÃ­cio e conclusÃ£o de ocorrÃªncias;
 * registro de falhas;
 * reagendamento;
-* identificação de tarefas atrasadas;
-* calendário operacional;
+* identificaÃ§Ã£o de tarefas atrasadas;
+* calendÃ¡rio operacional;
 * dashboard;
 * Swagger;
 * health check;
 * migrations e seed;
-* execução completa via Docker Compose.
+* execuÃ§Ã£o completa via Docker Compose.
 
 ---
 
@@ -73,9 +73,9 @@ TaskPlan API
    +---- Redis
 ```
 
-O PostgreSQL armazena os dados permanentes da aplicação.
+O PostgreSQL armazena os dados permanentes da aplicaÃ§Ã£o.
 
-O Redis é utilizado principalmente para controle das sessões de refresh token.
+O Redis Ã© utilizado principalmente para controle das sessÃµes de refresh token.
 
 ---
 
@@ -83,28 +83,28 @@ O Redis é utilizado principalmente para controle das sessões de refresh token.
 
 ```text
 TaskPlan/
-├── backend/
-│   ├── prisma/
-│   │   ├── migrations/
-│   │   ├── schema.prisma
-│   │   └── seed.ts
-│   │
-│   ├── src/
-│   │   ├── common/
-│   │   ├── database/
-│   │   ├── generated/
-│   │   └── modules/
-│   │
-│   ├── Dockerfile
-│   ├── .dockerignore
-│   └── package.json
-│
-├── docs/
-│   └── API.md
-│
-├── compose.yaml
-├── .env.example
-└── README.md
+â”œâ”€â”€ backend/
+â”‚   â”œâ”€â”€ prisma/
+â”‚   â”‚   â”œâ”€â”€ migrations/
+â”‚   â”‚   â”œâ”€â”€ schema.prisma
+â”‚   â”‚   â””â”€â”€ seed.ts
+â”‚   â”‚
+â”‚   â”œâ”€â”€ src/
+â”‚   â”‚   â”œâ”€â”€ common/
+â”‚   â”‚   â”œâ”€â”€ database/
+â”‚   â”‚   â”œâ”€â”€ generated/
+â”‚   â”‚   â””â”€â”€ modules/
+â”‚   â”‚
+â”‚   â”œâ”€â”€ Dockerfile
+â”‚   â”œâ”€â”€ .dockerignore
+â”‚   â””â”€â”€ package.json
+â”‚
+â”œâ”€â”€ docs/
+â”‚   â””â”€â”€ API.md
+â”‚
+â”œâ”€â”€ compose.yaml
+â”œâ”€â”€ .env.example
+â””â”€â”€ README.md
 ```
 
 ---
@@ -113,13 +113,13 @@ TaskPlan/
 
 ## 1. Requisitos
 
-Para executar o projeto utilizando Docker, é necessário possuir:
+Para executar o projeto utilizando Docker, Ã© necessÃ¡rio possuir:
 
 * Git
 * Docker
 * Docker Compose
 
-Para desenvolvimento local do backend também é recomendado:
+Para desenvolvimento local do backend tambÃ©m Ã© recomendado:
 
 * Node.js 24
 * npm
@@ -135,11 +135,11 @@ cd taskplan
 
 ---
 
-# Configuração das variáveis de ambiente
+# ConfiguraÃ§Ã£o das variÃ¡veis de ambiente
 
-O arquivo `.env` real não é versionado no Git.
+O arquivo `.env` real nÃ£o Ã© versionado no Git.
 
-Crie uma cópia do arquivo de exemplo.
+Crie uma cÃ³pia do arquivo de exemplo.
 
 ### Windows PowerShell
 
@@ -153,7 +153,7 @@ Copy-Item .env.example .env
 cp .env.example .env
 ```
 
-Depois edite o `.env` com os valores necessários para o ambiente.
+Depois edite o `.env` com os valores necessÃ¡rios para o ambiente.
 
 Exemplo:
 
@@ -183,7 +183,7 @@ PGADMIN_PASSWORD=ALTERAR
 PGADMIN_PORT=5050
 ```
 
-Nunca envie o arquivo `.env` para o repositório.
+Nunca envie o arquivo `.env` para o repositÃ³rio.
 
 ---
 
@@ -201,13 +201,13 @@ Depois:
 docker compose up -d
 ```
 
-Confira os serviços:
+Confira os serviÃ§os:
 
 ```bash
 docker compose ps
 ```
 
-O ambiente deverá possuir:
+O ambiente deverÃ¡ possuir:
 
 ```text
 taskplan-backend
@@ -226,13 +226,13 @@ healthy
 
 # Preparando o banco de dados
 
-Após subir os containers, execute as migrations:
+ApÃ³s subir os containers, execute as migrations:
 
 ```bash
 docker compose run --rm backend npx prisma migrate deploy
 ```
 
-As migrations criam toda a estrutura necessária no PostgreSQL.
+As migrations criam toda a estrutura necessÃ¡ria no PostgreSQL.
 
 ---
 
@@ -244,22 +244,22 @@ Para criar os registros iniciais:
 docker compose run --rm backend npx prisma db seed
 ```
 
-O seed prepara dados básicos como:
+O seed prepara dados bÃ¡sicos como:
 
 * perfil Administrador;
 * cargo Administrador;
-* usuário administrador;
-* periodicidade diária;
+* usuÃ¡rio administrador;
+* periodicidade diÃ¡ria;
 * periodicidade semanal;
 * periodicidade mensal.
 
 O seed utiliza `upsert`, portanto pode ser executado novamente sem duplicar os registros principais.
 
-As credenciais iniciais utilizadas em desenvolvimento devem ser verificadas no ambiente/seed e alteradas antes de qualquer implantação de produção.
+As credenciais iniciais utilizadas em desenvolvimento devem ser verificadas no ambiente/seed e alteradas antes de qualquer implantaÃ§Ã£o de produÃ§Ã£o.
 
 ---
 
-# URLs disponíveis
+# URLs disponÃ­veis
 
 ## API
 
@@ -287,17 +287,17 @@ http://localhost:5050
 
 ---
 
-# Testando se a API está funcionando
+# Testando se a API estÃ¡ funcionando
 
-Após subir os containers:
+ApÃ³s subir os containers:
 
 ```text
 GET http://localhost:3000/api/health
 ```
 
-A API deverá retornar status saudável.
+A API deverÃ¡ retornar status saudÃ¡vel.
 
-Também é possível verificar os logs:
+TambÃ©m Ã© possÃ­vel verificar os logs:
 
 ```bash
 docker compose logs backend --tail=100
@@ -311,24 +311,24 @@ docker compose logs -f backend
 
 ---
 
-# Principais módulos da API
+# Principais mÃ³dulos da API
 
-## Autenticação
+## AutenticaÃ§Ã£o
 
 ```text
 /api/auth
 ```
 
-Responsável por:
+ResponsÃ¡vel por:
 
 * login;
 * refresh token;
 * logout;
-* usuário autenticado.
+* usuÃ¡rio autenticado.
 
 ---
 
-## Usuários
+## UsuÃ¡rios
 
 ```text
 /api/users
@@ -352,7 +352,7 @@ Responsável por:
 
 ---
 
-## Funções
+## FunÃ§Ãµes
 
 ```text
 /api/functions
@@ -384,7 +384,7 @@ Responsável por:
 
 ---
 
-## Ocorrências
+## OcorrÃªncias
 
 ```text
 /api/task-occurrences
@@ -392,13 +392,13 @@ Responsável por:
 
 Inclui:
 
-* geração;
+* geraÃ§Ã£o;
 * listagem;
-* início;
-* conclusão;
+* inÃ­cio;
+* conclusÃ£o;
 * falha;
 * reagendamento;
-* calendário.
+* calendÃ¡rio.
 
 ---
 
@@ -410,15 +410,15 @@ Inclui:
 
 ---
 
-# Documentação completa da API
+# DocumentaÃ§Ã£o completa da API
 
-A documentação detalhada dos endpoints deve ficar em:
+A documentaÃ§Ã£o detalhada dos endpoints deve ficar em:
 
 ```text
 docs/API.md
 ```
 
-Também pode ser consultada interativamente através do Swagger:
+TambÃ©m pode ser consultada interativamente atravÃ©s do Swagger:
 
 ```text
 http://localhost:3000/docs
@@ -426,9 +426,9 @@ http://localhost:3000/docs
 
 ---
 
-# Fluxo de autenticação para o frontend
+# Fluxo de autenticaÃ§Ã£o para o frontend
 
-O frontend deverá inicialmente realizar:
+O frontend deverÃ¡ inicialmente realizar:
 
 ```text
 POST /api/auth/login
@@ -441,7 +441,7 @@ accessToken
 refreshToken
 ```
 
-O `accessToken` deve ser enviado nas requisições protegidas:
+O `accessToken` deve ser enviado nas requisiÃ§Ãµes protegidas:
 
 ```http
 Authorization: Bearer ACCESS_TOKEN
@@ -453,7 +453,7 @@ Quando o access token expirar:
 POST /api/auth/refresh
 ```
 
-O backend utiliza rotação de refresh tokens. Portanto, após renovar a sessão, o frontend deve substituir **tanto o access token quanto o refresh token** pelos novos valores.
+O backend utiliza rotaÃ§Ã£o de refresh tokens. Portanto, apÃ³s renovar a sessÃ£o, o frontend deve substituir **tanto o access token quanto o refresh token** pelos novos valores.
 
 No logout:
 
@@ -469,13 +469,13 @@ os tokens armazenados no frontend devem ser removidos.
 
 O frontend pode ser desenvolvido separadamente do backend.
 
-Com o ambiente Docker em execução, a API fica disponível em:
+Com o ambiente Docker em execuÃ§Ã£o, a API fica disponÃ­vel em:
 
 ```text
 http://localhost:3000/api
 ```
 
-Durante desenvolvimento local, configure a aplicação frontend para utilizar essa URL como base da API.
+Durante desenvolvimento local, configure a aplicaÃ§Ã£o frontend para utilizar essa URL como base da API.
 
 Exemplo:
 
@@ -483,19 +483,19 @@ Exemplo:
 VITE_API_URL=http://localhost:3000/api
 ```
 
-O valor utilizado no frontend dependerá da tecnologia adotada.
+O valor utilizado no frontend dependerÃ¡ da tecnologia adotada.
 
 ---
 
 # CORS
 
-O backend utiliza a variável:
+O backend utiliza a variÃ¡vel:
 
 ```env
 CORS_ORIGIN=http://localhost:5173
 ```
 
-Caso o frontend rode em outra porta, atualize essa variável.
+Caso o frontend rode em outra porta, atualize essa variÃ¡vel.
 
 Por exemplo:
 
@@ -513,7 +513,7 @@ docker compose up -d --force-recreate backend
 
 # Desenvolvimento local do backend
 
-Caso seja necessário executar o backend fora do Docker:
+Caso seja necessÃ¡rio executar o backend fora do Docker:
 
 ```bash
 cd backend
@@ -522,7 +522,7 @@ npx prisma generate
 npm run start:dev
 ```
 
-Nesse cenário, atenção às URLs de PostgreSQL e Redis.
+Nesse cenÃ¡rio, atenÃ§Ã£o Ã s URLs de PostgreSQL e Redis.
 
 Quando o backend roda localmente, normalmente utiliza:
 
@@ -530,7 +530,7 @@ Quando o backend roda localmente, normalmente utiliza:
 localhost
 ```
 
-Quando roda dentro do Docker, utiliza os nomes dos serviços:
+Quando roda dentro do Docker, utiliza os nomes dos serviÃ§os:
 
 ```text
 postgres
@@ -539,7 +539,7 @@ redis
 
 ---
 
-# Validação do backend
+# ValidaÃ§Ã£o do backend
 
 Dentro da pasta `backend`:
 
@@ -553,13 +553,13 @@ npm run test
 
 # Atualizando o projeto
 
-Para receber alterações do repositório:
+Para receber alteraÃ§Ãµes do repositÃ³rio:
 
 ```bash
 git pull
 ```
 
-Caso existam alterações no backend:
+Caso existam alteraÃ§Ãµes no backend:
 
 ```bash
 docker compose build backend
@@ -571,7 +571,7 @@ Aplique novas migrations:
 docker compose run --rm backend npx prisma migrate deploy
 ```
 
-Depois recrie o serviço:
+Depois recrie o serviÃ§o:
 
 ```bash
 docker compose up -d backend
@@ -579,7 +579,7 @@ docker compose up -d backend
 
 ---
 
-# Parando os serviços
+# Parando os serviÃ§os
 
 ```bash
 docker compose down
@@ -589,17 +589,17 @@ Os volumes do PostgreSQL e Redis permanecem preservados.
 
 ---
 
-# Atenção ao banco de dados
+# AtenÃ§Ã£o ao banco de dados
 
-Não utilize:
+NÃ£o utilize:
 
 ```bash
 docker compose down -v
 ```
 
-sem saber exatamente o que está fazendo.
+sem saber exatamente o que estÃ¡ fazendo.
 
-A opção `-v` remove os volumes associados e pode apagar o banco PostgreSQL.
+A opÃ§Ã£o `-v` remove os volumes associados e pode apagar o banco PostgreSQL.
 
 Para apenas parar os containers, use:
 
@@ -611,32 +611,32 @@ docker compose down
 
 # Banco de desenvolvimento
 
-Ao clonar o projeto em outra máquina, os dados existentes no banco de outro desenvolvedor **não são transferidos automaticamente**.
+Ao clonar o projeto em outra mÃ¡quina, os dados existentes no banco de outro desenvolvedor **nÃ£o sÃ£o transferidos automaticamente**.
 
 O novo ambiente recebe:
 
 * estrutura do banco por migrations;
 * registros iniciais por seed.
 
-Isso é o comportamento esperado para desenvolvimento.
+Isso Ã© o comportamento esperado para desenvolvimento.
 
-Caso seja necessário replicar exatamente um banco existente, deve ser utilizado backup/restore do PostgreSQL separadamente.
+Caso seja necessÃ¡rio replicar exatamente um banco existente, deve ser utilizado backup/restore do PostgreSQL separadamente.
 
-Backups de banco não devem ser armazenados no repositório Git.
+Backups de banco nÃ£o devem ser armazenados no repositÃ³rio Git.
 
 ---
 
-# Produção
+# ProduÃ§Ã£o
 
-Antes de subir o projeto em produção:
+Antes de subir o projeto em produÃ§Ã£o:
 
 * utilizar senhas fortes;
 * alterar secrets JWT;
 * alterar credenciais administrativas iniciais;
 * configurar corretamente `CORS_ORIGIN`;
 * utilizar HTTPS;
-* não expor PostgreSQL publicamente;
-* não expor Redis publicamente;
+* nÃ£o expor PostgreSQL publicamente;
+* nÃ£o expor Redis publicamente;
 * restringir acesso ao pgAdmin;
 * executar `prisma migrate deploy`;
 * definir rotina de backup do PostgreSQL.
@@ -664,21 +664,21 @@ TaskPlan API
 O MVP do backend possui:
 
 ```text
-Autenticação JWT           OK
+AutenticaÃ§Ã£o JWT           OK
 Refresh Token              OK
 Redis Sessions             OK
 RBAC                       OK
-Usuários                   OK
+UsuÃ¡rios                   OK
 Perfis                     OK
 Cargos                     OK
-Funções                    OK
+FunÃ§Ãµes                    OK
 Periodicidades             OK
 Feriados                   OK
 Tarefas                    OK
-Ocorrências                OK
-Dias não úteis             OK
+OcorrÃªncias                OK
+Dias nÃ£o Ãºteis             OK
 Reagendamento              OK
-Calendário                 OK
+CalendÃ¡rio                 OK
 Dashboard                  OK
 Swagger                    OK
 Health Check               OK
@@ -693,7 +693,7 @@ Redis                      OK
 
 # Fluxo inicial para um novo desenvolvedor
 
-Depois de clonar o repositório:
+Depois de clonar o repositÃ³rio:
 
 ```text
 1. Criar .env a partir de .env.example
@@ -707,7 +707,7 @@ Depois de clonar o repositório:
 9. iniciar desenvolvimento do frontend
 ```
 
-Com isso, cada desenvolvedor possui seu próprio ambiente completo do TaskPlan, incluindo API, PostgreSQL e Redis, sem precisar instalar manualmente cada serviço na máquina.
+Com isso, cada desenvolvedor possui seu prÃ³prio ambiente completo do TaskPlan, incluindo API, PostgreSQL e Redis, sem precisar instalar manualmente cada serviÃ§o na mÃ¡quina.
 
 ## Production release and rollback
 
@@ -718,3 +718,5 @@ The root-owned command builds immutable versioned images for both services, runs
 If an application healthcheck fails after promotion, it restores the previous frontend and backend image tags. Prisma migrations are deliberately forward-only: an application rollback does not restore or modify PostgreSQL/Redis data. Every migration released to production must therefore remain compatible with the immediately preceding application version until a coordinated recovery plan is approved.
 
 The initial host migration preserves the currently running images as `bootstrap-legacy` and does not recreate any service. It must be executed by an administrator from the supplied bootstrap script; the first GitHub Release performs the actual promotion.
+
+Consulte [o fluxo operacional de release e deploy](docs/DEPLOYMENT.md).

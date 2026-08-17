@@ -1,0 +1,58 @@
+name: Create TaskPlan release
+on:
+  workflow_run:
+    workflows: ["TaskPlan quality"]
+    branches: [main]
+    types: [completed]
+permissions:
+  contents: write
+concurrency:
+  group: taskplan-automatic-release-main
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+      - id: version
+        name: Calculate the next immutable SemVer release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force origin
+          LAST_TAG="$(git tag --merged HEAD --list 'v[0-9]*' --sort=-v:refname | head -n1 || true)"
+          if [[ -z "$LAST_TAG" ]]; then
+            echo 'create=true' >> "$GITHUB_OUTPUT"
+            echo 'version=v0.1.0' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CHANGES="$(git log --format='%s%n%b' "$LAST_TAG..HEAD")"
+          if [[ -z "$CHANGES" ]]; then
+            echo 'create=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CORE="${LAST_TAG#v}"
+          IFS=. read -r major minor patch <<< "$CORE"
+          if grep -Eq '(^|[[:space:]])BREAKING CHANGE:|^[[:alnum:]_-]+(\([^)]*\))?!:' <<< "$CHANGES"; then
+            major=$((major + 1)); minor=0; patch=0
+          elif grep -Eq '^feat(\([^)]*\))?:' <<< "$CHANGES"; then
+            minor=$((minor + 1)); patch=0
+          elif grep -Eq '^(fix|perf)(\([^)]*\))?:' <<< "$CHANGES"; then
+            patch=$((patch + 1))
+          else
+            echo 'create=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo 'create=true' >> "$GITHUB_OUTPUT"
+          echo "version=v${major}.${minor}.${patch}" >> "$GITHUB_OUTPUT"
+      - name: Create GitHub Release
+        if: steps.version.outputs.create == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: gh release create "$VERSION" --target "$SHA" --title "TaskPlan $VERSION" --generate-notes
