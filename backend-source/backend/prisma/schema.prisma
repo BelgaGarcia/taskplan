@@ -1,0 +1,276 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ======================================================
+// ENUMS
+// ======================================================
+
+enum PeriodicityType {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  BIMONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  ANNUAL
+  SPECIFIC_WEEKDAYS
+  SPECIFIC_MONTH_DAY
+  FIRST_BUSINESS_DAY
+  LAST_BUSINESS_DAY
+  CUSTOM_INTERVAL
+}
+
+enum NonexistentDayRule {
+  PREVIOUS_DAY
+  LAST_DAY_OF_MONTH
+  NEXT_MONTH
+  SKIP
+}
+
+enum HolidayType {
+  NATIONAL
+  STATE
+  MUNICIPAL
+  INTERNAL
+}
+
+enum TaskOccurrenceStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum TaskOccurrenceResult {
+  SUCCESS
+  ERROR
+  PARTIAL
+}
+
+// ======================================================
+// PERFIS DE ACESSO
+// ======================================================
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(100)
+  description String?  @db.VarChar(255)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users User[]
+
+  @@map("roles")
+}
+
+// ======================================================
+// CARGOS
+// ======================================================
+
+model Position {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(100)
+  description String?  @db.VarChar(255)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users                User[]
+  responsibleFunctions TaskFunction[] @relation("FunctionResponsiblePosition")
+  responsibleTasks     Task[]         @relation("TaskResponsiblePosition")
+
+  @@map("positions")
+}
+
+// ======================================================
+// USUÁRIOS
+// ======================================================
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String    @db.VarChar(150)
+  email        String    @unique @db.VarChar(255)
+  passwordHash String    @db.VarChar(255)
+  active       Boolean   @default(true)
+  roleId       String    @db.Uuid
+  positionId   String?   @db.Uuid
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  role     Role      @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  position Position? @relation(fields: [positionId], references: [id], onDelete: SetNull)
+
+  responsibleFunctions TaskFunction[]   @relation("FunctionResponsibleUser")
+  responsibleTasks     Task[]           @relation("TaskResponsibleUser")
+  taskOccurrences      TaskOccurrence[] @relation("OccurrenceResponsibleUser")
+
+  @@index([roleId])
+  @@index([positionId])
+  @@index([active])
+  @@map("users")
+}
+
+// ======================================================
+// FUNÇÕES
+// ======================================================
+
+model TaskFunction {
+  id                    String   @id @default(uuid()) @db.Uuid
+  name                  String   @unique @db.VarChar(150)
+  description           String?  @db.Text
+  active                Boolean  @default(true)
+  responsiblePositionId String?  @db.Uuid
+  responsibleUserId     String?  @db.Uuid
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  responsiblePosition Position? @relation("FunctionResponsiblePosition", fields: [responsiblePositionId], references: [id], onDelete: SetNull)
+  responsibleUser     User?     @relation("FunctionResponsibleUser", fields: [responsibleUserId], references: [id], onDelete: SetNull)
+
+  tasks Task[]
+
+  @@index([active])
+  @@index([responsiblePositionId])
+  @@index([responsibleUserId])
+  @@map("functions")
+}
+
+// ======================================================
+// PERIODICIDADES
+// ======================================================
+
+model Periodicity {
+  id                 String             @id @default(uuid()) @db.Uuid
+  name               String             @unique @db.VarChar(100)
+  type               PeriodicityType
+  interval           Int                @default(1)
+  daysOfWeek         Int[]              @default([])
+  dayOfMonth         Int?
+  month              Int?
+  nonexistentDayRule NonexistentDayRule @default(PREVIOUS_DAY)
+  active             Boolean            @default(true)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  tasks Task[]
+
+  @@index([type])
+  @@index([active])
+  @@map("periodicities")
+}
+
+// ======================================================
+// FERIADOS
+// ======================================================
+
+model Holiday {
+  id              String      @id @default(uuid()) @db.Uuid
+  name            String      @db.VarChar(150)
+  date            DateTime    @db.Date
+  type            HolidayType
+  locality        String?     @db.VarChar(150)
+  recurringAnnual Boolean     @default(false)
+  active          Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([date])
+  @@index([type])
+  @@index([active])
+  @@map("holidays")
+}
+
+// ======================================================
+// TAREFAS
+// ======================================================
+
+model Task {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String  @db.VarChar(200)
+  description String? @db.Text
+
+  functionId            String  @db.Uuid
+  periodicityId         String  @db.Uuid
+  responsiblePositionId String? @db.Uuid
+  responsibleUserId     String? @db.Uuid
+
+  startDate DateTime  @db.Date
+  endDate   DateTime? @db.Date
+
+  scheduledTime            String? @db.VarChar(5)
+  estimatedDurationMinutes Int?
+
+  mandatory    Boolean @default(true)
+  active       Boolean @default(true)
+  displayOrder Int     @default(0)
+
+  advanceOnNonBusinessDay Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  function            TaskFunction @relation(fields: [functionId], references: [id], onDelete: Restrict)
+  periodicity         Periodicity  @relation(fields: [periodicityId], references: [id], onDelete: Restrict)
+  responsiblePosition Position?    @relation("TaskResponsiblePosition", fields: [responsiblePositionId], references: [id], onDelete: SetNull)
+  responsibleUser     User?        @relation("TaskResponsibleUser", fields: [responsibleUserId], references: [id], onDelete: SetNull)
+
+  occurrences TaskOccurrence[]
+
+  @@index([functionId])
+  @@index([periodicityId])
+  @@index([responsiblePositionId])
+  @@index([responsibleUserId])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([active])
+  @@map("tasks")
+}
+
+// ======================================================
+// OCORRÊNCIAS DAS TAREFAS
+// ======================================================
+
+model TaskOccurrence {
+  id                String  @id @default(uuid()) @db.Uuid
+  taskId            String  @db.Uuid
+  responsibleUserId String? @db.Uuid
+
+  originalDate  DateTime @db.Date
+  scheduledDate DateTime @db.Date
+  scheduledTime String?  @db.VarChar(5)
+
+  status TaskOccurrenceStatus  @default(PENDING)
+  result TaskOccurrenceResult?
+
+  startedAt             DateTime?
+  completedAt           DateTime?
+  actualDurationMinutes Int?
+
+  notes String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task            Task  @relation(fields: [taskId], references: [id], onDelete: Restrict)
+  responsibleUser User? @relation("OccurrenceResponsibleUser", fields: [responsibleUserId], references: [id], onDelete: SetNull)
+
+  @@unique([taskId, originalDate])
+  @@index([taskId])
+  @@index([responsibleUserId])
+  @@index([originalDate])
+  @@index([scheduledDate])
+  @@index([status])
+  @@index([scheduledDate, status])
+  @@map("task_occurrences")
+}
