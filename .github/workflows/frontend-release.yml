@@ -1,4 +1,4 @@
-name: Frontend production release
+name: TaskPlan production release
 on:
   release:
     types: [published]
@@ -7,20 +7,28 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      sha: ${{ steps.release.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - name: Validate stable SemVer release from main
+      - id: release
+        name: Validate immutable stable SemVer release from main
+        shell: bash
         run: |
           VERSION="$(jq -r .release.tag_name "$GITHUB_EVENT_PATH")"
           test "$(jq -r .release.draft "$GITHUB_EVENT_PATH")" = false
           test "$(jq -r .release.prerelease "$GITHUB_EVENT_PATH")" = false
           [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
-          git fetch origin main --tags
-          git checkout "$VERSION"
-          git merge-base --is-ancestor HEAD origin/main
+          git fetch origin main --tags --force
+          SHA="$(git rev-list -n 1 "$VERSION")"
+          test -n "$SHA"
+          git merge-base --is-ancestor "$SHA" origin/main
+          echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v4
-        with: { node-version: 24, cache: npm }
+        with: { node-version: 24, cache: npm, cache-dependency-path: frontend/package-lock.json }
       - run: npm ci
         working-directory: frontend
       - run: npm run lint
@@ -30,13 +38,22 @@ jobs:
       - run: npm run build -- --configuration production
         working-directory: frontend
       - run: docker build --tag taskplan-frontend:validation frontend
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm, cache-dependency-path: backend/package-lock.json }
+      - run: npm ci
+        working-directory: backend
+      - run: npx prisma generate
+        working-directory: backend
+      - run: npm test -- --runInBand
+        working-directory: backend
+      - run: npm run build
+        working-directory: backend
+      - run: docker build --tag taskplan-backend:validation backend
+      - run: docker compose --env-file .env.example config --quiet
   production:
     needs: validate
     runs-on: [self-hosted, linux, x64, taskplan-prod]
     environment: production
     steps:
-      - name: Call restricted root-owned deploy command
-        run: |
-          VERSION="$(jq -r .release.tag_name "$GITHUB_EVENT_PATH")"
-          SHA="$(jq -r .release.target_commitish "$GITHUB_EVENT_PATH")"
-          sudo -n -- /usr/local/sbin/taskplan-frontend-deploy "${VERSION#v}" "$SHA"
+      - name: Deploy the coordinated TaskPlan release
+        run: sudo -n -- /usr/local/sbin/taskplan-deploy '${{ needs.validate.outputs.version }}' '${{ needs.validate.outputs.sha }}'

@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+[[ $(id -u) -eq 0 ]] || { echo 'Run as root.' >&2; exit 1; }
+app=taskplan
+repo=/opt/taskplan/src/taskplan
+repo_url=https://github.com/BelgaGarcia/taskplan-frontend.git
+compose_target=/etc/taskplan/compose.yaml
+env_file=/etc/taskplan/taskplan.env
+state_dir=/var/lib/taskplan
+release_env="$state_dir/release.env"
+state_file="$state_dir/current-release"
+runner_user=github-runner-taskplan
+
+[[ -f $env_file ]] || { echo "Missing $env_file; do not create secrets in this script." >&2; exit 1; }
+install -d -o root -g root -m 0755 /opt/taskplan/src /etc/taskplan
+install -d -o root -g "$runner_user" -m 0750 "$state_dir" /var/backups/taskplan
+install -d -o root -g root -m 0755 /var/log
+if [[ ! -d $repo/.git ]]; then
+  git clone --origin origin "$repo_url" "$repo"
+fi
+git -C "$repo" fetch --quiet origin main --tags
+git -C "$repo" checkout --quiet main
+git -C "$repo" pull --ff-only --quiet origin main
+
+if [[ ! -f $state_file ]]; then
+  backend_id="$(docker inspect --format '{{.Image}}' taskplan-backend)"
+  frontend_id="$(docker inspect --format '{{.Image}}' taskplan-frontend)"
+  docker tag "$backend_id" taskplan-backend:bootstrap-legacy
+  docker tag "$frontend_id" taskplan-frontend:bootstrap-legacy
+  printf 'TASKPLAN_RELEASE=bootstrap-legacy\n' > "$release_env"
+  chmod 0600 "$release_env"
+  printf 'version=bootstrap-legacy\nsha=legacy\nimage_backend=taskplan-backend:bootstrap-legacy\nimage_frontend=taskplan-frontend:bootstrap-legacy\ndeployed_at_utc=%s\n' "$(date --utc +%FT%TZ)" > "$state_file"
+  chmod 0640 "$state_file"
+fi
+
+install -o root -g root -m 0644 "$repo/compose.yaml" "$compose_target"
+install -o root -g root -m 0750 "$repo/ops/taskplan-deploy" /usr/local/sbin/taskplan-deploy
+printf '%s ALL=(root) NOPASSWD: /usr/local/sbin/taskplan-deploy *\n' "$runner_user" > /etc/sudoers.d/taskplan-deploy
+chmod 0440 /etc/sudoers.d/taskplan-deploy
+visudo -cf /etc/sudoers.d/taskplan-deploy
+
+docker compose --env-file "$env_file" --env-file "$release_env" -f "$compose_target" config --quiet
+printf 'Monorepo release layout installed. Existing containers remain untouched until the first GitHub Release.\n'

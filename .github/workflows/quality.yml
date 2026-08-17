@@ -5,6 +5,11 @@ on:
     branches: [main]
 permissions: { contents: read }
 jobs:
+  workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker://rhysd/actionlint:1.7.7
   frontend:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: frontend } }
@@ -26,6 +31,7 @@ jobs:
         with: { node-version: 24, cache: npm, cache-dependency-path: backend/package-lock.json }
       - run: npm ci
       - run: npx prisma generate
+      - run: npm run lint
       - run: npm test -- --runInBand
       - run: npm run build
       - run: docker build --tag taskplan-backend:${{ github.sha }} .
@@ -34,3 +40,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker compose --env-file .env.example config --quiet
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@v2
