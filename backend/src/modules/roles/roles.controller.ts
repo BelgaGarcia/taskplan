@@ -33,7 +33,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 @ApiTags('Perfis de acesso')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('Administrador')
+@Roles('ADMIN')
 @Controller('roles')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}

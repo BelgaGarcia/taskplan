@@ -24,7 +24,7 @@ import { HolidaysService } from './holidays.service';
 @ApiTags('Feriados')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('Administrador')
+@Roles('ADMIN')
 @Controller('holidays')
 export class HolidaysController {
   constructor(private readonly holidaysService: HolidaysService) {}

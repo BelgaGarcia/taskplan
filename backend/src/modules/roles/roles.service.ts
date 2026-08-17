@@ -21,6 +21,7 @@ export class RolesService {
       data: {
         name: normalizedName,
         description: createRoleDto.description?.trim() || null,
+        accessLevel: createRoleDto.accessLevel ?? 'OPERATOR',
         active: createRoleDto.active ?? true,
       },
     });
@@ -105,6 +106,9 @@ export class RolesService {
           ? {
               description: updateRoleDto.description.trim() || null,
             }
+          : {}),
+        ...(updateRoleDto.accessLevel !== undefined
+          ? { accessLevel: updateRoleDto.accessLevel }
           : {}),
         ...(updateRoleDto.active !== undefined
           ? { active: updateRoleDto.active }

@@ -31,7 +31,7 @@ import { FunctionsService } from './functions.service';
 @ApiTags('Funções')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('Administrador')
+@Roles('ADMIN')
 @Controller('functions')
 export class FunctionsController {
   constructor(private readonly functionsService: FunctionsService) {}

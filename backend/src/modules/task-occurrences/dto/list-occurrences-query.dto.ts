@@ -2,6 +2,7 @@ import { Transform } from 'class-transformer';
 import {
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsUUID,
@@ -42,5 +43,13 @@ export class ListOccurrencesQueryDto {
 
   @IsOptional()
   @IsUUID()
+  functionId?: string;
+
+  @IsOptional()
+  @IsUUID()
   responsibleUserId?: string;
+
+  @IsOptional()
+  @IsIn(['team', 'mine'])
+  scope: 'team' | 'mine' = 'team';
 }

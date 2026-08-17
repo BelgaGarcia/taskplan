@@ -56,17 +56,25 @@ enum TaskOccurrenceResult {
   PARTIAL
 }
 
+/// A stable authorization level. It is intentionally independent from the
+/// editable display name of a Role.
+enum AccessLevel {
+  ADMIN
+  OPERATOR
+}
+
 // ======================================================
 // PERFIS DE ACESSO
 // ======================================================
 
 model Role {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String   @unique @db.VarChar(100)
-  description String?  @db.VarChar(255)
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String      @id @default(uuid()) @db.Uuid
+  name        String      @unique @db.VarChar(100)
+  description String?     @db.VarChar(255)
+  accessLevel AccessLevel @default(OPERATOR)
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   users User[]
 
@@ -114,6 +122,7 @@ model User {
   responsibleFunctions TaskFunction[]   @relation("FunctionResponsibleUser")
   responsibleTasks     Task[]           @relation("TaskResponsibleUser")
   taskOccurrences      TaskOccurrence[] @relation("OccurrenceResponsibleUser")
+  executedOccurrences  TaskOccurrence[] @relation("OccurrenceExecutedByUser")
 
   @@index([roleId])
   @@index([positionId])
@@ -245,6 +254,7 @@ model TaskOccurrence {
   id                String  @id @default(uuid()) @db.Uuid
   taskId            String  @db.Uuid
   responsibleUserId String? @db.Uuid
+  executedByUserId  String? @db.Uuid
 
   originalDate  DateTime @db.Date
   scheduledDate DateTime @db.Date
@@ -264,10 +274,12 @@ model TaskOccurrence {
 
   task            Task  @relation(fields: [taskId], references: [id], onDelete: Restrict)
   responsibleUser User? @relation("OccurrenceResponsibleUser", fields: [responsibleUserId], references: [id], onDelete: SetNull)
+  executedByUser  User? @relation("OccurrenceExecutedByUser", fields: [executedByUserId], references: [id], onDelete: SetNull)
 
   @@unique([taskId, originalDate])
   @@index([taskId])
   @@index([responsibleUserId])
+  @@index([executedByUserId])
   @@index([originalDate])
   @@index([scheduledDate])
   @@index([status])

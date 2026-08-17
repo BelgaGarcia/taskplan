@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -28,9 +29,15 @@ export class CreateRoleDto {
   description?: string;
 
   @ApiPropertyOptional({
-    example: true,
-    default: true,
+    enum: ['ADMIN', 'OPERATOR'],
+    default: 'OPERATOR',
+    description: 'Nível estável usado pelo JWT e pelas autorizações.',
   })
+  @IsOptional()
+  @IsIn(['ADMIN', 'OPERATOR'])
+  accessLevel?: 'ADMIN' | 'OPERATOR';
+
+  @ApiPropertyOptional({ example: true, default: true })
   @IsOptional()
   @IsBoolean()
   active?: boolean;

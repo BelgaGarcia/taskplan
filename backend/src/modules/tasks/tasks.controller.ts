@@ -30,7 +30,7 @@ import { TasksService } from './tasks.service';
 @ApiTags('Tarefas')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('Administrador')
+@Roles('ADMIN')
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
