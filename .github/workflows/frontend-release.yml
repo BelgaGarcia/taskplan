@@ -2,6 +2,12 @@ name: TaskPlan production release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Stable release tag to deploy (for example, v0.2.0)
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
@@ -17,9 +23,13 @@ jobs:
         name: Validate immutable stable SemVer release from main
         shell: bash
         run: |
-          VERSION="$(jq -r .release.tag_name "$GITHUB_EVENT_PATH")"
-          test "$(jq -r .release.draft "$GITHUB_EVENT_PATH")" = false
-          test "$(jq -r .release.prerelease "$GITHUB_EVENT_PATH")" = false
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            VERSION="$(jq -r .release.tag_name "$GITHUB_EVENT_PATH")"
+            test "$(jq -r .release.draft "$GITHUB_EVENT_PATH")" = false
+            test "$(jq -r .release.prerelease "$GITHUB_EVENT_PATH")" = false
+          else
+            VERSION="${{ inputs.version }}"
+          fi
           [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
           git fetch origin main --tags --force
           SHA="$(git rev-list -n 1 "$VERSION")"
