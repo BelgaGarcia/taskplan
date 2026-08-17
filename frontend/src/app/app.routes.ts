@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+﻿import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
 import { LoginComponent } from './features/login.component';
 import { DashboardComponent } from './features/dashboard.component';
@@ -24,3 +24,4 @@ export const routes: Routes = [
   ] },
   { path: '**', redirectTo: '' }
 ];
+

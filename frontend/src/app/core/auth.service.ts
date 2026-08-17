@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, catchError, finalize, map, shareReplay, tap, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, finalize, map, shareReplay, tap, throwError } from 'rxjs';
 import { RuntimeConfigService } from './runtime-config.service';
 
 export interface User { id: string; name: string; email: string; role: { id: string; name: string }; position?: { id: string; name: string } | null; }
@@ -15,11 +15,7 @@ export class AuthService {
   logout(): void { const token = this.refreshToken; this.clear(); if (token) this.http.post(`${this.config.apiUrl}/auth/logout`, { refreshToken: token }).subscribe({ error: () => undefined }); }
   get token(): string | undefined { return this.accessToken; }
   get isAuthenticated(): boolean { return !!this.accessToken; }
-  refresh(): Observable<string> {
-    if (!this.refreshToken) return throwError(() => new Error('SessÃ£o nÃ£o disponÃ­vel'));
-    if (!this.refreshing$) this.refreshing$ = this.http.post<Tokens>(`${this.config.apiUrl}/auth/refresh`, { refreshToken: this.refreshToken }).pipe(tap(t => this.apply(t)), map(t => t.accessToken), finalize(() => this.refreshing$ = undefined), shareReplay(1));
-    return this.refreshing$;
-  }
+  refresh(): Observable<string> { if (!this.refreshToken) return throwError(() => new Error('Sessão não disponível')); if (!this.refreshing$) this.refreshing$ = this.http.post<Tokens>(`${this.config.apiUrl}/auth/refresh`, { refreshToken: this.refreshToken }).pipe(tap(tokens => this.apply(tokens)), map(tokens => tokens.accessToken), finalize(() => this.refreshing$ = undefined), shareReplay(1)); return this.refreshing$; }
   private apply(tokens: Tokens): void { this.accessToken = tokens.accessToken; this.refreshToken = tokens.refreshToken; if (tokens.user) this.user$.next(tokens.user); }
   private clear(): void { this.accessToken = undefined; this.refreshToken = undefined; this.user$.next(null); }
 }
