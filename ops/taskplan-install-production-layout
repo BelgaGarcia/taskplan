@@ -40,5 +40,5 @@ printf '%s ALL=(root) NOPASSWD: /usr/local/sbin/taskplan-deploy *\n' "$runner_us
 chmod 0440 /etc/sudoers.d/taskplan-deploy
 visudo -cf /etc/sudoers.d/taskplan-deploy
 
-docker compose --env-file "$env_file" --env-file "$release_env" -f "$compose_target" config --quiet
+docker compose --project-directory "$repo" --env-file "$env_file" --env-file "$release_env" -f "$compose_target" config --quiet
 printf 'Monorepo release layout installed. Existing containers remain untouched until the first GitHub Release.\n'

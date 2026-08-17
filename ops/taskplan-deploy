@@ -23,7 +23,7 @@ install -d -m 0750 "$state_dir" "$(dirname "$log_file")" "$(dirname "$lock_file"
 exec 9>"$lock_file"
 flock -n 9 || die 'Another TaskPlan maintenance operation is running.'
 
-compose_cmd=(docker compose --env-file "$env_file" --env-file "$release_env" -f "$compose")
+compose_cmd=(docker compose --project-directory "$repo" --env-file "$env_file" --env-file "$release_env" -f "$compose")
 wait_http() {
   local url=$1 label=$2
   for _ in $(seq 1 30); do
@@ -73,7 +73,7 @@ git -C "$repo" checkout --quiet --detach "$sha"
 tmp_release="$(mktemp "$state_dir/release.env.next.XXXXXX")"
 printf 'TASKPLAN_RELEASE=%s\n' "$version" > "$tmp_release"
 chmod 0600 "$tmp_release"
-next_compose=(docker compose --env-file "$env_file" --env-file "$tmp_release" -f "$compose")
+next_compose=(docker compose --project-directory "$repo" --env-file "$env_file" --env-file "$tmp_release" -f "$compose")
 log 'Building versioned frontend and backend images.'
 "${next_compose[@]}" build backend frontend
 log 'Applying Prisma migrations before promotion.'
