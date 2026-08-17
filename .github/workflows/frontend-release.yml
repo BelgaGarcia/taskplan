@@ -1,0 +1,38 @@
+name: Frontend production release
+on:
+  release:
+    types: [published]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Validate stable SemVer release from main
+        run: |
+          VERSION="$(jq -r .release.tag_name "$GITHUB_EVENT_PATH")"
+          test "$(jq -r .release.draft "$GITHUB_EVENT_PATH")" = false
+          test "$(jq -r .release.prerelease "$GITHUB_EVENT_PATH")" = false
+          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          git fetch origin main --tags
+          git checkout "$VERSION"
+          git merge-base --is-ancestor HEAD origin/main
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test -- --watch=false
+      - run: npm run build -- --configuration production
+      - run: docker build --tag taskplan-frontend:validation .
+  production:
+    needs: validate
+    runs-on: [self-hosted, linux, x64, taskplan-prod]
+    environment: production
+    steps:
+      - name: Call restricted root-owned deploy command
+        run: |
+          VERSION="$(jq -r .release.tag_name "$GITHUB_EVENT_PATH")"
+          SHA="$(jq -r .release.target_commitish "$GITHUB_EVENT_PATH")"
+          sudo -n -- /usr/local/sbin/taskplan-frontend-deploy "${VERSION#v}" "$SHA"
