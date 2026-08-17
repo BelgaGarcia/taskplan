@@ -1,5 +1,12 @@
 import { SetMetadata } from '@nestjs/common';
 
-export const ROLES_KEY = 'roles';
+export type AccessLevel = 'ADMIN' | 'OPERATOR';
 
-export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
+export const ACCESS_LEVELS_KEY = 'access-levels';
+
+/**
+ * Declares stable authorization levels. The persisted role name remains a
+ * display value and is never used as an authorization decision.
+ */
+export const Roles = (...levels: AccessLevel[]) =>
+  SetMetadata(ACCESS_LEVELS_KEY, levels);

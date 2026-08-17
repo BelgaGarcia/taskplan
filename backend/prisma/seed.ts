@@ -17,11 +17,13 @@ async function main() {
       name: 'Administrador',
     },
     update: {
+      accessLevel: 'ADMIN',
       active: true,
     },
     create: {
       name: 'Administrador',
       description: 'Acesso administrativo ao TaskPlan.',
+      accessLevel: 'ADMIN',
       active: true,
     },
   });

@@ -24,7 +24,7 @@ import { PeriodicitiesService } from './periodicities.service';
 @ApiTags('Periodicidades')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('Administrador')
+@Roles('ADMIN')
 @Controller('periodicities')
 export class PeriodicitiesController {
   constructor(private readonly periodicitiesService: PeriodicitiesService) {}

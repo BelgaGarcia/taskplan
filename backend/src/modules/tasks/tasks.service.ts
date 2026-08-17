@@ -143,7 +143,11 @@ export class TasksService {
         : current.startDate;
 
     const endDate =
-      dto.endDate !== undefined ? this.toDate(dto.endDate) : current.endDate;
+      dto.endDate !== undefined
+        ? dto.endDate
+          ? this.toDate(dto.endDate)
+          : null
+        : current.endDate;
 
     this.validateDateRange(startDate, endDate);
 
@@ -156,7 +160,7 @@ export class TasksService {
           name: dto.name.trim(),
         }),
         ...(dto.description !== undefined && {
-          description: dto.description.trim() || null,
+          description: dto.description?.trim() || null,
         }),
         ...(dto.functionId !== undefined && {
           functionId: dto.functionId,
@@ -213,7 +217,9 @@ export class TasksService {
     });
   }
 
-  private async validateRelations(dto: Partial<CreateTaskDto>): Promise<void> {
+  private async validateRelations(
+    dto: Partial<CreateTaskDto> | UpdateTaskDto,
+  ): Promise<void> {
     if (dto.functionId) {
       const taskFunction = await this.prisma.taskFunction.findFirst({
         where: {

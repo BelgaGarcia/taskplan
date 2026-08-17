@@ -2243,3 +2243,36 @@ pgAdmin                  OK
 ```
 
 Essa documentação corresponde ao núcleo da API TaskPlan implementado até a versão atual.
+---
+
+# Contratos operacionais e autorização
+
+## Níveis estáveis de acesso
+
+Todo perfil possui `accessLevel`: `ADMIN` ou `OPERATOR`. O nível é incluído no JWT e não depende do nome editável do perfil. `POST`, `PATCH` e `DELETE` dos cadastros administrativos exigem `ADMIN`; as telas administrativas também são protegidas no cliente. O `DELETE` inativa o cadastro.
+
+Dashboard, calendário e consultas de ocorrências exigem somente autenticação. O calendário continua no formato agrupado abaixo:
+
+```json
+{
+  "from": "2026-08-01",
+  "to": "2026-08-31",
+  "days": [{ "date": "2026-08-20", "occurrences": [] }]
+}
+```
+
+O dashboard usa `today.occurrences`, evitando um segundo formato concorrente.
+
+## Ocorrências
+
+`GET /api/task-occurrences/calendar` e `GET /api/task-occurrences` aceitam `functionId`, `responsibleUserId`, `status` e `scope=team|mine`. `GET /api/task-occurrences/filter-options` retorna somente IDs e nomes para os filtros. Cada ocorrência inclui `canOperate`.
+
+Um administrador pode operar qualquer ocorrência. Um operador pode operar a responsabilidade direta; na falta dela, pode operar se seu cargo for o responsável. Ao iniciar, a API registra `executedByUserId` a partir do JWT. Após o início, somente esse executor ou um administrador pode concluir ou reagendar.
+
+Transições válidas: `PENDING → IN_PROGRESS`, `PENDING → COMPLETED|FAILED` (conclusão direta) e `IN_PROGRESS → COMPLETED|FAILED`. Ocorrências `COMPLETED`, `FAILED` e `CANCELLED` são somente consulta. Reagendamento é permitido apenas em `PENDING` e `IN_PROGRESS` respeitando a autorização.
+
+`POST /api/task-occurrences/generate` é idempotente, restrito a `ADMIN` e recebe `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }`.
+
+As operações retornam `400` para formato ou transição inválida, `403` para falta de autorização, `404` para recursos inexistentes e `409` quando outra pessoa alterou a ocorrência durante a operação.
+
+Campos relacionais opcionais de atualização aceitam `null`, incluindo cargo, usuário responsável e fim de vigência. Isso remove o vínculo sem exclusão física.

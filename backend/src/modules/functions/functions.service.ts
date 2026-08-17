@@ -24,7 +24,7 @@ export class FunctionsService {
     return this.prisma.taskFunction.create({
       data: {
         name,
-        description: dto.description?.trim(),
+        description: dto.description?.trim() || null,
         active: dto.active ?? true,
         responsiblePositionId: dto.responsiblePositionId ?? null,
         responsibleUserId: dto.responsibleUserId ?? null,
@@ -157,7 +157,7 @@ export class FunctionsService {
           name,
         }),
         ...(dto.description !== undefined && {
-          description: dto.description.trim(),
+          description: dto.description?.trim() || null,
         }),
         ...(dto.active !== undefined && {
           active: dto.active,
@@ -233,8 +233,8 @@ export class FunctionsService {
   }
 
   private async validateRelations(
-    positionId?: string,
-    userId?: string,
+    positionId?: string | null,
+    userId?: string | null,
   ): Promise<void> {
     if (positionId) {
       const position = await this.prisma.position.findUnique({

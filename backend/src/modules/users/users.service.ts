@@ -146,6 +146,7 @@ export class UsersService {
         ...(dto.roleId !== undefined ? { roleId: dto.roleId } : {}),
         ...(dto.positionId !== undefined ? { positionId: dto.positionId } : {}),
         ...(dto.active !== undefined ? { active: dto.active } : {}),
+        ...(dto.active === true ? { deletedAt: null } : {}),
       },
       include: {
         role: true,

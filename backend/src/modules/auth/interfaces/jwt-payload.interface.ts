@@ -1,8 +1,11 @@
+export type AccessLevel = 'ADMIN' | 'OPERATOR';
+
 export interface JwtPayload {
   sub: string;
   email: string;
   roleId: string;
-  role: string;
+  accessLevel: AccessLevel;
+  positionId: string | null;
 }
 
 export interface RefreshJwtPayload {

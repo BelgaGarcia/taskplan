@@ -31,7 +31,7 @@ import { PositionsService } from './positions.service';
 @ApiTags('Cargos')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('Administrador')
+@Roles('ADMIN')
 @Controller('positions')
 export class PositionsController {
   constructor(private readonly positionsService: PositionsService) {}

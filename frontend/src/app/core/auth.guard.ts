@@ -1,4 +1,14 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
-export const authGuard: CanActivateFn = () => inject(AuthService).isAuthenticated || inject(Router).createUrlTree(['/login']);
+
+export const authGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  return auth.isAuthenticated || inject(Router).createUrlTree(['/login']);
+};
+
+export const adminGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return auth.isAdmin ? true : router.createUrlTree(['/calendario']);
+};
