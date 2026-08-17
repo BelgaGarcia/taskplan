@@ -1,4 +1,4 @@
-name: Quality
+name: TaskPlan quality
 on:
   pull_request:
   push:
@@ -7,16 +7,30 @@ permissions: { contents: read }
 jobs:
   frontend:
     runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 24, cache: npm }
+        with: { node-version: 24, cache: npm, cache-dependency-path: frontend/package-lock.json }
       - run: npm ci
-        working-directory: frontend
       - run: npm run lint
-        working-directory: frontend
       - run: npm test -- --watch=false
-        working-directory: frontend
       - run: npm run build -- --configuration production
-        working-directory: frontend
-      - run: docker build --tag taskplan-frontend:${{ github.sha }} frontend
+      - run: docker build --tag taskplan-frontend:${{ github.sha }} .
+  backend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm, cache-dependency-path: backend/package-lock.json }
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm test -- --runInBand
+      - run: npm run build
+      - run: docker build --tag taskplan-backend:${{ github.sha }} .
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose --env-file .env.example config --quiet
