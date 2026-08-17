@@ -6,6 +6,7 @@ COPY . .
 RUN npm run build -- --configuration production
 
 FROM nginxinc/nginx-unprivileged:1.29-alpine
+USER root
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker-entrypoint.sh /docker-entrypoint.d/40-runtime-config.sh
 RUN chmod 0755 /docker-entrypoint.d/40-runtime-config.sh
