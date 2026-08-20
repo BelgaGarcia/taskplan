@@ -35,6 +35,8 @@ O commit que é liberado precisa estar em `main`; tags existentes nunca são ree
 
 Mudanças no próprio mecanismo root-owned (`ops/taskplan-deploy`) requerem instalação explícita por administrador no host. Isso é intencional: uma Release de aplicação não pode modificar automaticamente as permissões root do servidor.
 
+O bootstrap `ops/taskplan-install-production-layout` normaliza o remoto do clone controlado para `https://github.com/BelgaGarcia/taskplan.git` antes de validar o `fetch`; portanto, ele também migra instalações existentes quando executado novamente pelo administrador.
+
 ## Regressão visual do login
 
 O comando `npm run test:ui`, executado no diretório `frontend/`, usa Playwright contra a imagem Nginx produzida pelo Docker. Ele cobre os viewports 320, 375, 768 e 1440 px, garantindo ausência de rolagem horizontal e sobreposição entre a apresentação e o formulário de login. Localmente, instale o Chromium uma vez com `npx playwright install chromium` e exponha a imagem em `TASKPLAN_UI_BASE_URL` (o CI faz isso automaticamente).
