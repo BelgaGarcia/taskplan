@@ -12,7 +12,7 @@ interface NavigationItem { path: string; label: string; icon: IconName; }
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, NgFor, NgIf, AsyncPipe, IconComponent],
   template: `
-    <div *ngIf="ready; else loading" class="app-shell" [class.sidebar-compact]="compact" [class.drawer-open]="drawerOpen">
+    <div *ngIf="ready; else loading" class="app-shell" [class.login-layout]="!auth.isAuthenticated" [class.sidebar-compact]="compact" [class.drawer-open]="drawerOpen">
       <aside *ngIf="auth.isAuthenticated" class="sidebar" aria-label="Navegação principal">
         <a class="brand" routerLink="/calendario" (click)="closeDrawer()"><tp-icon name="app"></tp-icon><span>TaskPlan</span></a>
         <button type="button" class="sidebar-toggle" (click)="toggleSidebar()" [attr.aria-label]="compact ? 'Expandir menu' : 'Recolher menu'" [title]="compact ? 'Expandir menu' : 'Recolher menu'"><tp-icon name="menu"></tp-icon><span>Recolher menu</span></button>
