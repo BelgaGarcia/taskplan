@@ -10,6 +10,11 @@ coverage/
 frontend/.angular/
 frontend/node_modules/
 frontend/dist/
+frontend/playwright-report/
+frontend/test-results/
+frontend/.npm-cache/
+frontend/.playwright-browsers/
 backend/node_modules/
+backend/.npm-cache/
 backend/dist/
 backend/coverage/

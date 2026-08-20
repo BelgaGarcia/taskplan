@@ -4,7 +4,7 @@ set -Eeuo pipefail
 [[ $(id -u) -eq 0 ]] || { echo 'Run as root.' >&2; exit 1; }
 app=taskplan
 repo=/opt/taskplan/src/taskplan
-repo_url=https://github.com/BelgaGarcia/taskplan-frontend.git
+repo_url=https://github.com/BelgaGarcia/taskplan.git
 compose_target=/etc/taskplan/compose.yaml
 env_file=/etc/taskplan/taskplan.env
 state_dir=/var/lib/taskplan
@@ -18,6 +18,8 @@ install -d -o root -g "$runner_user" -m 0750 "$state_dir" /var/backups/taskplan
 install -d -o root -g root -m 0755 /var/log
 if [[ ! -d $repo/.git ]]; then
   git clone --origin origin "$repo_url" "$repo"
+else
+  git -C "$repo" remote set-url origin "$repo_url"
 fi
 git -C "$repo" fetch --quiet origin main --tags
 git -C "$repo" checkout --quiet main

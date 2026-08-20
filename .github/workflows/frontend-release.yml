@@ -2,31 +2,68 @@ name: TaskPlan production release
 on:
   release:
     types: [published]
+  workflow_run:
+    workflows: ["Create TaskPlan release"]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Stable release tag to deploy (for example, v0.2.0)
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
-  validate:
+  resolve:
     runs-on: ubuntu-latest
     outputs:
+      deploy: ${{ steps.release.outputs.deploy }}
       version: ${{ steps.release.outputs.version }}
       sha: ${{ steps.release.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - id: release
-        name: Validate immutable stable SemVer release from main
+        name: Resolve immutable stable SemVer release from main
         shell: bash
         run: |
-          VERSION="$(jq -r .release.tag_name "$GITHUB_EVENT_PATH")"
-          test "$(jq -r .release.draft "$GITHUB_EVENT_PATH")" = false
-          test "$(jq -r .release.prerelease "$GITHUB_EVENT_PATH")" = false
-          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            VERSION="$(jq -r .release.tag_name "$GITHUB_EVENT_PATH")"
+            test "$(jq -r .release.draft "$GITHUB_EVENT_PATH")" = false
+            test "$(jq -r .release.prerelease "$GITHUB_EVENT_PATH")" = false
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ inputs.version }}"
+          else
+            test "${{ github.event.workflow_run.conclusion }}" = success
+            VERSION=""
+          fi
           git fetch origin main --tags --force
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            VERSION="$(git tag --points-at "${{ github.event.workflow_run.head_sha }}" --list 'v[0-9]*' --sort=-v:refname | head -n1 || true)"
+            if [[ -z "$VERSION" ]]; then
+              echo 'deploy=false' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
           SHA="$(git rev-list -n 1 "$VERSION")"
           test -n "$SHA"
           git merge-base --is-ancestor "$SHA" origin/main
-          echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
-          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          {
+            echo 'deploy=true'
+            echo "version=${VERSION#v}"
+            echo "sha=$SHA"
+          } >> "$GITHUB_OUTPUT"
+  validate:
+    needs: resolve
+    if: needs.resolve.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with: { node-version: 24, cache: npm, cache-dependency-path: frontend/package-lock.json }
       - run: npm ci
@@ -44,6 +81,8 @@ jobs:
         working-directory: backend
       - run: npx prisma generate
         working-directory: backend
+      - run: npm run lint
+        working-directory: backend
       - run: npm test -- --runInBand
         working-directory: backend
       - run: npm run build
@@ -51,9 +90,10 @@ jobs:
       - run: docker build --tag taskplan-backend:validation backend
       - run: docker compose --env-file .env.example config --quiet
   production:
-    needs: validate
+    needs: [resolve, validate]
+    if: needs.resolve.outputs.deploy == 'true' && needs.validate.result == 'success'
     runs-on: [self-hosted, linux, x64, taskplan-prod]
     environment: production
     steps:
       - name: Deploy the coordinated TaskPlan release
-        run: sudo -n -- /usr/local/sbin/taskplan-deploy '${{ needs.validate.outputs.version }}' '${{ needs.validate.outputs.sha }}'
+        run: sudo -n -- /usr/local/sbin/taskplan-deploy '${{ needs.resolve.outputs.version }}' '${{ needs.resolve.outputs.sha }}'
