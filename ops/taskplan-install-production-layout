@@ -18,6 +18,8 @@ install -d -o root -g "$runner_user" -m 0750 "$state_dir" /var/backups/taskplan
 install -d -o root -g root -m 0755 /var/log
 if [[ ! -d $repo/.git ]]; then
   git clone --origin origin "$repo_url" "$repo"
+else
+  git -C "$repo" remote set-url origin "$repo_url"
 fi
 git -C "$repo" fetch --quiet origin main --tags
 git -C "$repo" checkout --quiet main
