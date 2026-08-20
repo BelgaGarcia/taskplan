@@ -25,6 +25,16 @@ O commit que é liberado precisa estar em `main`; tags existentes nunca são ree
 4. A Release valida novamente o código, cria imagens versionadas, executa `prisma migrate deploy`, promove backend e frontend e verifica os healthchecks.
 5. Se um healthcheck falhar após a promoção, o comando restaura as imagens anteriores de backend e frontend. Migrations são forward-only e não restauram dados automaticamente.
 
+## Origem canônica publicada
+
+O proxy publica o frontend em `http://infratec.centrasa.corp` e o navegador chama a API em `http://192.168.100.15:5183/api`. Como são origens diferentes, a configuração protegida do host deve manter as duas entradas em `CORS_ORIGIN`:
+
+```text
+http://192.168.100.15:5182,http://infratec.centrasa.corp
+```
+
+Depois de alterar `/etc/taskplan/taskplan.env`, recrie somente o serviço `backend` e valide um preflight para `POST /api/auth/login` com `Origin: http://infratec.centrasa.corp`. O valor não deve ser substituído por um segredo no repositório.
+
 ## Evidências e consulta
 
 - Aplicação: `http://192.168.100.15:5182/login`
