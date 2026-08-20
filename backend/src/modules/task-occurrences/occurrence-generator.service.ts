@@ -52,10 +52,19 @@ export class OccurrenceGeneratorService {
         });
       }
 
-      attempted += rows.length;
+      const distinctRows = Array.from(
+        new Map(
+          rows.map((row) => [
+            `${row.taskId}:${new Date(row.scheduledDate).toISOString()}`,
+            row,
+          ]),
+        ).values(),
+      );
+
+      attempted += distinctRows.length;
 
       const result = await this.prisma.taskOccurrence.createMany({
-        data: rows,
+        data: distinctRows,
         skipDuplicates: true,
       });
 

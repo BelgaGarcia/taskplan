@@ -226,7 +226,9 @@ export class TaskOccurrencesService {
     const status =
       dto.result === TaskOccurrenceResult.ERROR
         ? TaskOccurrenceStatus.FAILED
-        : TaskOccurrenceStatus.COMPLETED;
+        : dto.result === TaskOccurrenceResult.PARTIAL
+          ? TaskOccurrenceStatus.IN_PROGRESS
+          : TaskOccurrenceStatus.COMPLETED;
     const where: Prisma.TaskOccurrenceWhereInput = {
       id,
       status: occurrence.status,
@@ -244,7 +246,7 @@ export class TaskOccurrencesService {
       data: {
         status,
         result: dto.result,
-        completedAt: now,
+        completedAt: status === TaskOccurrenceStatus.IN_PROGRESS ? null : now,
         actualDurationMinutes: dto.actualDurationMinutes,
         notes: dto.notes?.trim() || null,
         ...(occurrence.status === TaskOccurrenceStatus.PENDING

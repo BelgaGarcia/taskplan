@@ -277,6 +277,7 @@ model TaskOccurrence {
   executedByUser  User? @relation("OccurrenceExecutedByUser", fields: [executedByUserId], references: [id], onDelete: SetNull)
 
   @@unique([taskId, originalDate])
+  @@unique([taskId, scheduledDate])
   @@index([taskId])
   @@index([responsibleUserId])
   @@index([executedByUserId])
