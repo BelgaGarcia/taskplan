@@ -2,7 +2,7 @@
 
 ## Automação
 
-Nenhum push publica produção diretamente. Um merge em `main` inicia `TaskPlan quality`. O monorepo mantém Angular em `frontend/`, NestJS/Prisma em `backend/` e infraestrutura na raiz. A qualidade detecta os caminhos alterados e executa somente as validações de frontend, backend ou Compose necessárias; a auditoria de workflows e segredos continua obrigatória. Somente se esse workflow terminar verde, `Create TaskPlan release` avalia os commits ainda não liberados e cria uma Release GitHub estável e imutável. A publicação da Release aciona `TaskPlan production release`, que repete a validação completa dos dois serviços e despacha exclusivamente versão e SHA ao runner `taskplan-prod`.
+Nenhum push publica produção diretamente. Um merge em `main` inicia `TaskPlan quality`. O monorepo mantém Angular em `frontend/`, NestJS/Prisma em `backend/` e infraestrutura na raiz. A qualidade detecta os caminhos alterados e executa somente as validações de frontend, backend ou Compose necessárias; a auditoria de workflows e segredos continua obrigatória. Somente se esse workflow terminar verde, `Create TaskPlan release` avalia os commits ainda não liberados e cria uma Release GitHub estável e imutável. A conclusão bem-sucedida desse criador de releases aciona `TaskPlan production release`, que resolve a tag imutável no mesmo SHA, repete a validação completa dos dois serviços e despacha exclusivamente versão e SHA ao runner `taskplan-prod`. Releases publicadas manualmente também continuam acionando esse workflow.
 
 A etapa de produção executa apenas `sudo -n /usr/local/sbin/taskplan-deploy VERSION SHA`. Esse comando é root-owned e recria somente backend e frontend. PostgreSQL, Redis, volumes e pgAdmin não são recriados pelo deploy.
 
