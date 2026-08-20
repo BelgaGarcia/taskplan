@@ -80,4 +80,26 @@ describe('TaskOccurrencesService', () => {
       service.complete('occurrence', { result: 'SUCCESS' }, operator),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
+
+  it('keeps a partially completed occurrence in progress', async () => {
+    const updateMany = jest
+      .fn<Promise<{ count: number }>, [Prisma.TaskOccurrenceUpdateManyArgs]>()
+      .mockResolvedValue({ count: 1 });
+    const service = new TaskOccurrencesService({
+      taskOccurrence: {
+        findUnique: jest.fn().mockResolvedValue(occurrence()),
+        updateMany,
+      },
+    } as never);
+
+    await service.complete('occurrence', { result: 'PARTIAL' }, operator);
+
+    expect(updateMany.mock.calls[0][0].data).toEqual(
+      expect.objectContaining({
+        status: TaskOccurrenceStatus.IN_PROGRESS,
+        result: 'PARTIAL',
+        completedAt: null,
+      }),
+    );
+  });
 });
