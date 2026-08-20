@@ -15,7 +15,7 @@ on:
 permissions:
   contents: read
 jobs:
-  validate:
+  resolve:
     runs-on: ubuntu-latest
     outputs:
       deploy: ${{ steps.release.outputs.deploy }}
@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - id: release
-        name: Validate immutable stable SemVer release from main
+        name: Resolve immutable stable SemVer release from main
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" == "release" ]]; then
@@ -55,6 +55,15 @@ jobs:
             echo "version=${VERSION#v}"
             echo "sha=$SHA"
           } >> "$GITHUB_OUTPUT"
+  validate:
+    needs: resolve
+    if: needs.resolve.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with: { node-version: 24, cache: npm, cache-dependency-path: frontend/package-lock.json }
       - run: npm ci
@@ -81,10 +90,10 @@ jobs:
       - run: docker build --tag taskplan-backend:validation backend
       - run: docker compose --env-file .env.example config --quiet
   production:
-    needs: validate
-    if: needs.validate.outputs.deploy == 'true'
+    needs: [resolve, validate]
+    if: needs.resolve.outputs.deploy == 'true' && needs.validate.result == 'success'
     runs-on: [self-hosted, linux, x64, taskplan-prod]
     environment: production
     steps:
       - name: Deploy the coordinated TaskPlan release
-        run: sudo -n -- /usr/local/sbin/taskplan-deploy '${{ needs.validate.outputs.version }}' '${{ needs.validate.outputs.sha }}'
+        run: sudo -n -- /usr/local/sbin/taskplan-deploy '${{ needs.resolve.outputs.version }}' '${{ needs.resolve.outputs.sha }}'
