@@ -54,6 +54,8 @@ jobs:
         working-directory: backend
       - run: npx prisma generate
         working-directory: backend
+      - run: npm run lint
+        working-directory: backend
       - run: npm test -- --runInBand
         working-directory: backend
       - run: npm run build

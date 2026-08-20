@@ -129,7 +129,7 @@ Para desenvolvimento local do backend tambÃ©m Ã© recomendado:
 # Clonando o projeto
 
 ```bash
-git clone https://github.com/moliveira035/taskplan.git
+git clone https://github.com/BelgaGarcia/taskplan.git
 cd taskplan
 ```
 

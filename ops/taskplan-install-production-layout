@@ -4,7 +4,7 @@ set -Eeuo pipefail
 [[ $(id -u) -eq 0 ]] || { echo 'Run as root.' >&2; exit 1; }
 app=taskplan
 repo=/opt/taskplan/src/taskplan
-repo_url=https://github.com/BelgaGarcia/taskplan-frontend.git
+repo_url=https://github.com/BelgaGarcia/taskplan.git
 compose_target=/etc/taskplan/compose.yaml
 env_file=/etc/taskplan/taskplan.env
 state_dir=/var/lib/taskplan

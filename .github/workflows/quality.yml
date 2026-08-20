@@ -3,14 +3,41 @@ on:
   pull_request:
   push:
     branches: [main]
-permissions: { contents: read }
+permissions:
+  contents: read
+  pull-requests: read
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+      compose: ${{ steps.filter.outputs.compose }}
+      shared: ${{ steps.filter.outputs.shared }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+            compose:
+              - 'compose.yaml'
+              - '.env.example'
+              - 'ops/**'
+            shared:
+              - '.github/workflows/**'
   workflow:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: docker://rhysd/actionlint:1.7.7
   frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.shared == 'true'
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: frontend } }
     steps:
@@ -22,7 +49,24 @@ jobs:
       - run: npm test -- --watch=false
       - run: npm run build -- --configuration production
       - run: docker build --tag taskplan-frontend:${{ github.sha }} .
+      - run: npx playwright install --with-deps chromium
+      - run: docker run --detach --rm --name taskplan-frontend-ui -p 127.0.0.1:8080:8080 taskplan-frontend:${{ github.sha }}
+      - run: |
+          for ((attempt = 1; attempt <= 30; attempt++)); do
+            if curl --fail --silent http://127.0.0.1:8080/healthz; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs taskplan-frontend-ui
+          exit 1
+      - run: npm run test:ui
+        env: { TASKPLAN_UI_BASE_URL: http://127.0.0.1:8080 }
+      - if: always()
+        run: docker stop taskplan-frontend-ui || true
   backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.shared == 'true'
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: backend } }
     steps:
@@ -36,6 +80,8 @@ jobs:
       - run: npm run build
       - run: docker build --tag taskplan-backend:${{ github.sha }} .
   compose:
+    needs: changes
+    if: needs.changes.outputs.compose == 'true' || needs.changes.outputs.shared == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
