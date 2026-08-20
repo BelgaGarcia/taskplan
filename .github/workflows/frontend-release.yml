@@ -50,9 +50,11 @@ jobs:
           SHA="$(git rev-list -n 1 "$VERSION")"
           test -n "$SHA"
           git merge-base --is-ancestor "$SHA" origin/main
-          echo 'deploy=true' >> "$GITHUB_OUTPUT"
-          echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
-          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          {
+            echo 'deploy=true'
+            echo "version=${VERSION#v}"
+            echo "sha=$SHA"
+          } >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v4
         with: { node-version: 24, cache: npm, cache-dependency-path: frontend/package-lock.json }
       - run: npm ci
