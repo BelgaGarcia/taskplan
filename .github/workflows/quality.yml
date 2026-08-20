@@ -52,7 +52,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: docker run --detach --rm --name taskplan-frontend-ui -p 127.0.0.1:8080:8080 taskplan-frontend:${{ github.sha }}
       - run: |
-          for attempt in {1..30}; do
+          for ((attempt = 1; attempt <= 30; attempt++)); do
             if curl --fail --silent http://127.0.0.1:8080/healthz; then
               exit 0
             fi
