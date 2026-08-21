@@ -26,6 +26,8 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreatePositionDto } from './dto/create-position.dto';
 import { ListPositionsQueryDto } from './dto/list-positions-query.dto';
 import { UpdatePositionDto } from './dto/update-position.dto';
+import { UpdatePositionHierarchyDto } from './dto/update-position-hierarchy.dto';
+import { PositionHierarchyService } from './position-hierarchy.service';
 import { PositionsService } from './positions.service';
 
 @ApiTags('Cargos')
@@ -34,7 +36,22 @@ import { PositionsService } from './positions.service';
 @Roles('ADMIN')
 @Controller('positions')
 export class PositionsController {
-  constructor(private readonly positionsService: PositionsService) {}
+  constructor(
+    private readonly positionsService: PositionsService,
+    private readonly hierarchyService: PositionHierarchyService,
+  ) {}
+
+  @Get('hierarchy')
+  @ApiOperation({ summary: 'Consultar matriz de herança entre cargos' })
+  hierarchy() {
+    return this.hierarchyService.getHierarchy();
+  }
+
+  @Patch('hierarchy')
+  @ApiOperation({ summary: 'Substituir matriz de herança entre cargos' })
+  updateHierarchy(@Body() dto: UpdatePositionHierarchyDto) {
+    return this.hierarchyService.replaceHierarchy(dto);
+  }
 
   @Post()
   @ApiOperation({ summary: 'Cadastrar um cargo' })

@@ -49,6 +49,11 @@ export type Role = Prisma.RoleModel
  */
 export type Position = Prisma.PositionModel
 /**
+ * Model PositionInheritance
+ * 
+ */
+export type PositionInheritance = Prisma.PositionInheritanceModel
+/**
  * Model User
  * 
  */
@@ -74,7 +79,17 @@ export type Holiday = Prisma.HolidayModel
  */
 export type Task = Prisma.TaskModel
 /**
+ * Model TaskOccurrenceExclusion
+ * 
+ */
+export type TaskOccurrenceExclusion = Prisma.TaskOccurrenceExclusionModel
+/**
  * Model TaskOccurrence
  * 
  */
 export type TaskOccurrence = Prisma.TaskOccurrenceModel
+/**
+ * Model AuditLog
+ * 
+ */
+export type AuditLog = Prisma.AuditLogModel

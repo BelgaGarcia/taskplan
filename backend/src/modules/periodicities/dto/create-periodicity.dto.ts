@@ -62,6 +62,28 @@ export class CreatePeriodicityDto {
   dayOfMonth?: number;
 
   @ApiPropertyOptional({
+    example: 10,
+    description:
+      'Dia inicial da faixa mensal (obrigatório para MONTHLY_DAY_RANGE).',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(31)
+  startDayOfMonth?: number;
+
+  @ApiPropertyOptional({
+    example: 17,
+    description:
+      'Dia final da faixa mensal (obrigatório para MONTHLY_DAY_RANGE).',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(31)
+  endDayOfMonth?: number;
+
+  @ApiPropertyOptional({
     example: 12,
   })
   @IsOptional()

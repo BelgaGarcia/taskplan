@@ -5,6 +5,7 @@ import { DashboardComponent } from './features/dashboard.component';
 import { CalendarComponent } from './features/calendar.component';
 import { AdminResourceComponent } from './features/admin-resource.component';
 import { FutureFeatureComponent } from './features/future-feature.component';
+import { PositionHierarchyComponent } from './features/position-hierarchy.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -22,6 +23,7 @@ export const routes: Routes = [
       { path: 'feriados', component: AdminResourceComponent, canActivate: [adminGuard], data: { resource: 'holidays' } },
       { path: 'usuarios', component: AdminResourceComponent, canActivate: [adminGuard], data: { resource: 'users' } },
       { path: 'cargos', component: AdminResourceComponent, canActivate: [adminGuard], data: { resource: 'positions' } },
+      { path: 'cargos/hierarquia', component: PositionHierarchyComponent, canActivate: [adminGuard] },
       { path: 'perfis', component: AdminResourceComponent, canActivate: [adminGuard], data: { resource: 'roles' } },
       { path: 'relatorios', component: FutureFeatureComponent, data: { title: 'Relatórios' } },
       { path: 'configuracoes', component: FutureFeatureComponent, data: { title: 'Configurações' } },

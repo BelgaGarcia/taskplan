@@ -10,11 +10,48 @@ type TaskWithPeriodicity = Prisma.TaskGetPayload<{
 
 type OccurrenceRow = Prisma.TaskOccurrenceCreateManyInput;
 
+/**
+ * Resolves several original dates that were advanced to the same date without
+ * depending on insertion order. The native occurrence always wins; otherwise
+ * the oldest original date is retained.
+ */
+export function deduplicateScheduledOccurrences(
+  rows: OccurrenceRow[],
+): OccurrenceRow[] {
+  const selected = new Map<string, OccurrenceRow>();
+
+  for (const row of rows) {
+    const key = `${row.taskId}:${new Date(row.scheduledDate).toISOString()}`;
+    const current = selected.get(key);
+
+    if (!current || shouldPreferOccurrence(row, current)) {
+      selected.set(key, row);
+    }
+  }
+
+  return Array.from(selected.values());
+}
+
+function shouldPreferOccurrence(
+  candidate: OccurrenceRow,
+  current: OccurrenceRow,
+): boolean {
+  const candidateOriginal = new Date(candidate.originalDate).getTime();
+  const currentOriginal = new Date(current.originalDate).getTime();
+  const candidateScheduled = new Date(candidate.scheduledDate).getTime();
+  const currentScheduled = new Date(current.scheduledDate).getTime();
+  const candidateIsNative = candidateOriginal === candidateScheduled;
+  const currentIsNative = currentOriginal === currentScheduled;
+
+  if (candidateIsNative !== currentIsNative) return candidateIsNative;
+  return candidateOriginal < currentOriginal;
+}
+
 @Injectable()
 export class OccurrenceGeneratorService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async generate(fromValue: string, toValue: string) {
+  async generate(fromValue: string, toValue: string, taskIds?: string[]) {
     const from = this.toDate(fromValue);
     const to = this.toDate(toValue);
 
@@ -24,7 +61,7 @@ export class OccurrenceGeneratorService {
       );
     }
 
-    const tasks = await this.getTasks(from, to);
+    const tasks = await this.getTasks(from, to, taskIds);
 
     let attempted = 0;
     let created = 0;
@@ -52,13 +89,21 @@ export class OccurrenceGeneratorService {
         });
       }
 
-      const distinctRows = Array.from(
-        new Map(
-          rows.map((row) => [
-            `${row.taskId}:${new Date(row.scheduledDate).toISOString()}`,
-            row,
-          ]),
-        ).values(),
+      const exclusions = await this.prisma.taskOccurrenceExclusion.findMany({
+        where: {
+          taskId: task.id,
+          originalDate: { in: originalDates },
+        },
+        select: { originalDate: true },
+      });
+      const excludedOriginalDates = new Set(
+        exclusions.map((item) => item.originalDate.getTime()),
+      );
+      const distinctRows = deduplicateScheduledOccurrences(
+        rows.filter(
+          (row) =>
+            !excludedOriginalDates.has(new Date(row.originalDate).getTime()),
+        ),
       );
 
       attempted += distinctRows.length;
@@ -81,10 +126,28 @@ export class OccurrenceGeneratorService {
     };
   }
 
-  private getTasks(from: Date, to: Date) {
+  async generateForTasks(taskIds: string[], from: Date, to: Date) {
+    if (taskIds.length === 0 || to < from) {
+      return {
+        tasksProcessed: 0,
+        occurrencesAttempted: 0,
+        occurrencesCreated: 0,
+        duplicatesSkipped: 0,
+      };
+    }
+
+    return this.generate(
+      from.toISOString().slice(0, 10),
+      to.toISOString().slice(0, 10),
+      taskIds,
+    );
+  }
+
+  private getTasks(from: Date, to: Date, taskIds?: string[]) {
     return this.prisma.task.findMany({
       where: {
         active: true,
+        ...(taskIds?.length ? { id: { in: taskIds } } : {}),
         startDate: {
           lte: to,
         },
@@ -131,12 +194,14 @@ export class OccurrenceGeneratorService {
         );
 
       case 'WEEKLY':
-        return this.generateByIntervalDays(
-          task,
-          start,
-          end,
-          7 * task.periodicity.interval,
-        );
+        return task.periodicity.daysOfWeek.length
+          ? this.generateWeekly(task, start, end)
+          : this.generateByIntervalDays(
+              task,
+              start,
+              end,
+              7 * task.periodicity.interval,
+            );
 
       case 'BIWEEKLY':
         return this.generateByIntervalDays(
@@ -153,6 +218,9 @@ export class OccurrenceGeneratorService {
           end,
           task.periodicity.interval,
         );
+
+      case 'MONTHLY_DAY_RANGE':
+        return this.generateMonthlyDayRange(task, start, end);
 
       case 'BIMONTHLY':
         return this.generateMonthly(
@@ -272,6 +340,81 @@ export class OccurrenceGeneratorService {
         month -= 12;
         year += 1;
       }
+    }
+
+    return result;
+  }
+
+  generateMonthlyDayRange(
+    task: TaskWithPeriodicity,
+    start: Date,
+    end: Date,
+  ): Date[] {
+    const startDay = task.periodicity.startDayOfMonth;
+    const endDay = task.periodicity.endDayOfMonth;
+
+    if (!startDay || !endDay) return [];
+
+    const result: Date[] = [];
+    const interval = Math.max(task.periodicity.interval, 1);
+    let year = task.startDate.getUTCFullYear();
+    let month = task.startDate.getUTCMonth();
+    let monthsSinceStart = 0;
+
+    while (Date.UTC(year, month, 1) <= end.getTime()) {
+      if (monthsSinceStart % interval === 0) {
+        const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+        const firstValidDay = Math.max(startDay, 1);
+        const lastValidDay = Math.min(endDay, lastDay);
+
+        for (let day = firstValidDay; day <= lastValidDay; day += 1) {
+          const candidate = new Date(Date.UTC(year, month, day));
+          if (
+            candidate >= start &&
+            candidate <= end &&
+            candidate >= task.startDate &&
+            (!task.endDate || candidate <= task.endDate)
+          ) {
+            result.push(candidate);
+          }
+        }
+      }
+
+      month += 1;
+      monthsSinceStart += 1;
+      if (month > 11) {
+        month = 0;
+        year += 1;
+      }
+    }
+
+    return result;
+  }
+
+  generateWeekly(task: TaskWithPeriodicity, start: Date, end: Date): Date[] {
+    const allowed = new Set(task.periodicity.daysOfWeek);
+    const interval = Math.max(task.periodicity.interval, 1);
+    const anchorWeek = this.startOfIsoWeek(task.startDate);
+    const result: Date[] = [];
+    const cursor = new Date(start);
+
+    while (cursor <= end) {
+      const isoDay = cursor.getUTCDay() || 7;
+      const week = this.startOfIsoWeek(cursor);
+      const weeksSinceAnchor = Math.floor(
+        (week.getTime() - anchorWeek.getTime()) / (7 * 24 * 60 * 60 * 1000),
+      );
+
+      if (
+        weeksSinceAnchor >= 0 &&
+        weeksSinceAnchor % interval === 0 &&
+        allowed.has(isoDay) &&
+        cursor >= task.startDate
+      ) {
+        result.push(new Date(cursor));
+      }
+
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
     }
 
     return result;
@@ -485,6 +628,15 @@ export class OccurrenceGeneratorService {
 
   private toDate(value: string): Date {
     return new Date(`${value}T00:00:00.000Z`);
+  }
+
+  private startOfIsoWeek(value: Date): Date {
+    const date = new Date(
+      Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()),
+    );
+    const daysSinceMonday = (date.getUTCDay() + 6) % 7;
+    date.setUTCDate(date.getUTCDate() - daysSinceMonday);
+    return date;
   }
 
   private maxDate(first: Date, second: Date): Date {

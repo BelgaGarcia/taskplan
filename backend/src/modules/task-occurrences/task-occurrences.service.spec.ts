@@ -5,7 +5,9 @@ import { TaskOccurrencesService } from './task-occurrences.service';
 
 const occurrence = (overrides: Record<string, unknown> = {}) => ({
   id: 'occurrence',
+  taskId: 'task-1',
   status: TaskOccurrenceStatus.PENDING,
+  originalDate: new Date('2026-08-17T00:00:00.000Z'),
   scheduledDate: new Date('2026-08-17T00:00:00.000Z'),
   responsibleUserId: 'operator-1',
   executedByUserId: null,
@@ -31,9 +33,13 @@ describe('TaskOccurrencesService', () => {
     const updateMany = jest
       .fn<Promise<{ count: number }>, [Prisma.TaskOccurrenceUpdateManyArgs]>()
       .mockResolvedValue({ count: 1 });
-    const service = new TaskOccurrencesService({
-      taskOccurrence: { findUnique, updateMany },
-    } as never);
+    const service = new TaskOccurrencesService(
+      {
+        taskOccurrence: { findUnique, updateMany },
+        auditLog: { create: jest.fn() },
+      } as never,
+      { getInheritedPositionIds: jest.fn().mockResolvedValue([]) } as never,
+    );
 
     await service.start('occurrence', operator);
 
@@ -48,14 +54,20 @@ describe('TaskOccurrencesService', () => {
 
   it('blocks an operator who is not directly responsible', async () => {
     const updateMany = jest.fn();
-    const service = new TaskOccurrencesService({
-      taskOccurrence: {
-        findUnique: jest
-          .fn()
-          .mockResolvedValue(occurrence({ responsibleUserId: 'another-user' })),
-        updateMany,
-      },
-    } as never);
+    const service = new TaskOccurrencesService(
+      {
+        taskOccurrence: {
+          findUnique: jest
+            .fn()
+            .mockResolvedValue(
+              occurrence({ responsibleUserId: 'another-user' }),
+            ),
+          updateMany,
+        },
+        auditLog: { create: jest.fn() },
+      } as never,
+      { getInheritedPositionIds: jest.fn().mockResolvedValue([]) } as never,
+    );
 
     await expect(service.start('occurrence', operator)).rejects.toBeInstanceOf(
       ForbiddenException,
@@ -64,17 +76,21 @@ describe('TaskOccurrencesService', () => {
   });
 
   it('only lets the recorded executor finish an in-progress occurrence', async () => {
-    const service = new TaskOccurrencesService({
-      taskOccurrence: {
-        findUnique: jest.fn().mockResolvedValue(
-          occurrence({
-            status: TaskOccurrenceStatus.IN_PROGRESS,
-            executedByUserId: 'another-user',
-          }),
-        ),
-        updateMany: jest.fn(),
-      },
-    } as never);
+    const service = new TaskOccurrencesService(
+      {
+        taskOccurrence: {
+          findUnique: jest.fn().mockResolvedValue(
+            occurrence({
+              status: TaskOccurrenceStatus.IN_PROGRESS,
+              executedByUserId: 'another-user',
+            }),
+          ),
+          updateMany: jest.fn(),
+        },
+        auditLog: { create: jest.fn() },
+      } as never,
+      { getInheritedPositionIds: jest.fn().mockResolvedValue([]) } as never,
+    );
 
     await expect(
       service.complete('occurrence', { result: 'SUCCESS' }, operator),
@@ -85,12 +101,16 @@ describe('TaskOccurrencesService', () => {
     const updateMany = jest
       .fn<Promise<{ count: number }>, [Prisma.TaskOccurrenceUpdateManyArgs]>()
       .mockResolvedValue({ count: 1 });
-    const service = new TaskOccurrencesService({
-      taskOccurrence: {
-        findUnique: jest.fn().mockResolvedValue(occurrence()),
-        updateMany,
-      },
-    } as never);
+    const service = new TaskOccurrencesService(
+      {
+        taskOccurrence: {
+          findUnique: jest.fn().mockResolvedValue(occurrence()),
+          updateMany,
+        },
+        auditLog: { create: jest.fn() },
+      } as never,
+      { getInheritedPositionIds: jest.fn().mockResolvedValue([]) } as never,
+    );
 
     await service.complete('occurrence', { result: 'PARTIAL' }, operator);
 
