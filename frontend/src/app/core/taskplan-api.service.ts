@@ -20,6 +20,8 @@ export class TaskPlanApiService {
   fetch<T>(endpoint: string): Observable<T> { return this.http.get<T>(this.url(endpoint)); }
   create<T>(endpoint: string, body: object): Observable<T> { return this.http.post<T>(this.url(endpoint), body); }
   update<T>(endpoint: string, id: string, body: object): Observable<T> { return this.http.patch<T>(this.url(`${endpoint}/${id}`), body); }
+  reactivatePeriodicity<T>(id: string): Observable<T> { return this.http.patch<T>(this.url(`periodicities/${id}/reactivate`), {}); }
+  resetUserPassword<T>(id: string, body: { mode: 'SET' | 'TEMPORARY'; password?: string }): Observable<{ user: T; invalidatedSessions: number; temporaryPassword?: string }> { return this.http.patch<{ user: T; invalidatedSessions: number; temporaryPassword?: string }>(this.url(`users/${id}/password`), body); }
   inactivate<T>(endpoint: string, id: string): Observable<T> { return this.http.delete<T>(this.url(`${endpoint}/${id}`)); }
   dashboard(): Observable<DashboardSummary> { return this.http.get<DashboardSummary>(this.url('dashboard/summary')); }
   calendar(query: Query): Observable<CalendarResponse> { return this.http.get<CalendarResponse>(this.url('task-occurrences/calendar'), { params: this.params(query) }); }
@@ -32,7 +34,6 @@ export class TaskPlanApiService {
   deleteOccurrence(id: string, scope: 'current' | 'future'): Observable<{ id: string; scope: string; removedCount: number }> { return this.http.delete<{ id: string; scope: string; removedCount: number }>(this.url(`task-occurrences/${id}`), { params: { scope } }); }
   positionHierarchy(): Observable<PositionHierarchy> { return this.fetch<PositionHierarchy>('positions/hierarchy'); }
   updatePositionHierarchy(inheritances: Array<{ positionId: string; inheritedPositionId: string }>): Observable<PositionHierarchy> { return this.http.patch<PositionHierarchy>(this.url('positions/hierarchy'), { inheritances }); }
-
   private url(path: string): string { return `${this.config.apiUrl}/${path}`; }
   private params(query: Query): HttpParams {
     return Object.entries(query).reduce((params, [key, value]) => value === null || value === undefined || value === '' ? params : params.set(key, String(value)), new HttpParams());

@@ -55,6 +55,14 @@ export class PeriodicitiesController {
     return this.periodicitiesService.update(id, dto);
   }
 
+  @Patch(':id/reactivate')
+  @ApiOperation({
+    summary: 'Reativar periodicidade e gerar novamente a agenda futura',
+  })
+  reactivate(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.periodicitiesService.reactivate(id);
+  }
+
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   deactivate(@Param('id', new ParseUUIDPipe()) id: string) {

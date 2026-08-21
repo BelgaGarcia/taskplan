@@ -5,7 +5,7 @@ export type OccurrenceResult = 'SUCCESS' | 'PARTIAL' | 'ERROR';
 export interface NamedOption { id: string; name: string; active?: boolean; }
 export interface Role extends NamedOption { description?: string | null; accessLevel: AccessLevel; }
 export interface Position extends NamedOption { description?: string | null; }
-export interface User extends NamedOption { email: string; role: Role; position?: Position | null; }
+export interface User extends NamedOption { email: string; role: Role; position?: Position | null; mustChangePassword?: boolean; }
 export interface TaskFunction extends NamedOption { description?: string | null; responsiblePosition?: Position | null; responsibleUser?: User | null; }
 export interface Periodicity extends NamedOption { type: string; interval: number; daysOfWeek: number[]; dayOfMonth?: number | null; startDayOfMonth?: number | null; endDayOfMonth?: number | null; month?: number | null; nonexistentDayRule: string; }
 export interface Holiday extends NamedOption { date: string; type: string; locality?: string | null; recurringAnnual: boolean; }

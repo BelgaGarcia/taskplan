@@ -41,11 +41,12 @@ const definitions: Record<ResourceKey, Definition> = {
       <div class="page-heading"><div><p class="eyebrow">Administração</p><h2><tp-icon [name]="definition.icon"></tp-icon>{{ definition.title }}</h2><p>Cadastre, consulte e mantenha {{ definition.title.toLowerCase() }} sem exclusão física.</p></div><button class="primary-button" type="button" (click)="openCreate()"><tp-icon name="plus"></tp-icon>Novo {{ definition.singular }}</button></div>
       <div class="resource-toolbar"><label class="search-field"><tp-icon name="search"></tp-icon><input [value]="search" (input)="search = inputValue($event)" (keyup.enter)="load(1)" placeholder="Pesquisar"></label><select *ngFor="let filter of definition.filters || []" (change)="setFilter(filter.key, inputValue($event))"><option value="">{{ filter.label }}</option><option *ngFor="let option of options[filter.options] || []" [value]="option.id">{{ option.name }}</option></select><button class="secondary-button" type="button" (click)="load(1)"><tp-icon name="filter"></tp-icon>Aplicar</button></div>
       <p class="form-alert error" *ngIf="error">{{ error }}</p><p class="form-alert success" *ngIf="notice">{{ notice }}</p>
-      <div class="table-wrap"><div *ngIf="loading" class="loading-block">Carregando {{ definition.title.toLowerCase() }}…</div><table *ngIf="!loading && rows.length; else empty"><thead><tr><th *ngFor="let column of definition.columns">{{ column.label }}</th><th>Ações</th></tr></thead><tbody><tr *ngFor="let row of rows"><td *ngFor="let column of definition.columns">{{ column.value(row) }}</td><td class="row-actions"><button type="button" class="icon-button" (click)="openView(row)" aria-label="Visualizar"><tp-icon name="eye"></tp-icon></button><button type="button" class="icon-button" (click)="openEdit(row)" aria-label="Editar"><tp-icon name="edit"></tp-icon></button><button type="button" class="icon-button" (click)="confirm(row)" [attr.aria-label]="row.active === false ? 'Reativar' : 'Inativar'" [title]="row.active === false ? 'Reativar' : 'Inativar'"><tp-icon [name]="row.active === false ? 'rotate' : 'warning'"></tp-icon></button></td></tr></tbody></table><ng-template #empty><div *ngIf="!loading" class="empty-state large">Nenhum registro encontrado.</div></ng-template></div>
+      <div class="table-wrap"><div *ngIf="loading" class="loading-block">Carregando {{ definition.title.toLowerCase() }}…</div><table *ngIf="!loading && rows.length; else empty"><thead><tr><th *ngFor="let column of definition.columns">{{ column.label }}</th><th>Ações</th></tr></thead><tbody><tr *ngFor="let row of rows"><td *ngFor="let column of definition.columns">{{ column.value(row) }}</td><td class="row-actions"><button type="button" class="icon-button" (click)="openView(row)" aria-label="Visualizar"><tp-icon name="eye"></tp-icon></button><button type="button" class="icon-button" (click)="openEdit(row)" aria-label="Editar"><tp-icon name="edit"></tp-icon></button><button *ngIf="definition.endpoint === 'users'" type="button" class="icon-button" (click)="openPasswordReset(row)" aria-label="Redefinir senha" title="Redefinir senha"><tp-icon name="key"></tp-icon></button><button type="button" class="icon-button" (click)="confirm(row)" [attr.aria-label]="row.active === false ? 'Reativar' : 'Inativar'" [title]="row.active === false ? 'Reativar' : 'Inativar'"><tp-icon [name]="row.active === false ? 'rotate' : 'warning'"></tp-icon></button></td></tr></tbody></table><ng-template #empty><div *ngIf="!loading" class="empty-state large">Nenhum registro encontrado.</div></ng-template></div>
       <div class="pagination" *ngIf="pagination.totalPages > 1"><span>{{ pagination.total }} registros</span><button type="button" class="secondary-button" [disabled]="pagination.page === 1" (click)="load(pagination.page - 1)">Anterior</button><span>Página {{ pagination.page }} de {{ pagination.totalPages }}</span><button type="button" class="secondary-button" [disabled]="pagination.page === pagination.totalPages" (click)="load(pagination.page + 1)">Próxima</button></div>
     </section>
-    <div class="modal-backdrop" *ngIf="mode" (click)="closeModal()"><article class="detail-modal resource-modal" role="dialog" aria-modal="true" [attr.aria-label]="modalTitle" (click)="$event.stopPropagation()"><button class="close-button" type="button" (click)="closeModal()" aria-label="Fechar"><tp-icon name="close"></tp-icon></button><p class="eyebrow">{{ mode === 'view' ? 'Consulta' : mode === 'create' ? 'Novo cadastro' : 'Edição' }}</p><h2>{{ modalTitle }}</h2><form *ngIf="mode !== 'view'" [formGroup]="form" (ngSubmit)="save()"><ng-container *ngFor="let field of fields"><label class="form-field" *ngIf="visible(field)"><span *ngIf="field.type !== 'checkbox'">{{ field.label }}<b *ngIf="field.required && (mode === 'create' || !field.createOnly)">*</b></span><input *ngIf="['text','email','password','number','date','time'].includes(field.type)" [type]="field.type" [formControlName]="field.key"><textarea *ngIf="field.type === 'textarea'" [formControlName]="field.key"></textarea><select *ngIf="field.type === 'select'" [formControlName]="field.key"><option [ngValue]="null">Selecione</option><option *ngFor="let option of options[field.options || ''] || []" [value]="option.id">{{ option.name }}</option></select><span class="checkbox-field" *ngIf="field.type === 'checkbox'"><input type="checkbox" [formControlName]="field.key">{{ field.label }}</span><small *ngIf="field.hint">{{ field.hint }}</small></label></ng-container><p class="form-alert error" *ngIf="modalError">{{ modalError }}</p><footer><button class="secondary-button" type="button" (click)="closeModal()">Cancelar</button><button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Salvando…' : 'Salvar alterações' }}</button></footer></form><dl *ngIf="mode === 'view' && selected"><div *ngFor="let column of definition.columns"><dt>{{ column.label }}</dt><dd>{{ column.value(selected) }}</dd></div></dl></article></div>
+    <div class="modal-backdrop" *ngIf="mode" (click)="closeModal()"><article class="detail-modal resource-modal" role="dialog" aria-modal="true" [attr.aria-label]="modalTitle" (click)="$event.stopPropagation()"><button class="close-button" type="button" (click)="closeModal()" aria-label="Fechar"><tp-icon name="close"></tp-icon></button><p class="eyebrow">{{ mode === 'view' ? 'Consulta' : mode === 'create' ? 'Novo cadastro' : 'Edição' }}</p><h2>{{ modalTitle }}</h2><form *ngIf="mode !== 'view'" [formGroup]="form" (ngSubmit)="save()"><ng-container *ngFor="let field of fields"><label class="form-field" *ngIf="visible(field)"><span *ngIf="field.type !== 'checkbox' && field.type !== 'weekdays'">{{ field.label }}<b *ngIf="field.required && (mode === 'create' || !field.createOnly)">*</b></span><input *ngIf="['text','email','password','number','date','time'].includes(field.type)" [type]="field.type" [formControlName]="field.key"><textarea *ngIf="field.type === 'textarea'" [formControlName]="field.key"></textarea><select *ngIf="field.type === 'select'" [formControlName]="field.key"><option [ngValue]="null">Selecione</option><option *ngFor="let option of options[field.options || ''] || []" [value]="option.id">{{ option.name }}</option></select><span class="weekday-field" *ngIf="field.type === 'weekdays'"><span>{{ field.label }}</span><span class="weekday-options"><span *ngFor="let day of weekDays"><input type="checkbox" [checked]="hasWeekday(day.value)" (change)="toggleWeekday(day.value, $event)">{{ day.label }}</span></span></span><span class="checkbox-field" *ngIf="field.type === 'checkbox'"><input type="checkbox" [formControlName]="field.key">{{ field.label }}</span><small *ngIf="field.hint">{{ field.hint }}</small></label></ng-container><p class="form-alert error" *ngIf="modalError">{{ modalError }}</p><footer><button class="secondary-button" type="button" (click)="closeModal()">Cancelar</button><button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Salvando…' : 'Salvar alterações' }}</button></footer></form><dl *ngIf="mode === 'view' && selected"><div *ngFor="let column of definition.columns"><dt>{{ column.label }}</dt><dd>{{ column.value(selected) }}</dd></div></dl></article></div>
     <div class="modal-backdrop" *ngIf="pendingAction" (click)="pendingAction = undefined"><article class="confirm-modal" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()"><tp-icon name="warning"></tp-icon><h2>{{ pendingAction.row.active === false ? 'Reativar' : 'Inativar' }} {{ definition.singular }}</h2><p>{{ pendingAction.row.active === false ? 'O cadastro voltará a ficar disponível.' : 'O cadastro não será excluído; ele apenas deixará de ficar disponível para novos vínculos.' }}</p><footer><button class="secondary-button" type="button" (click)="pendingAction = undefined">Cancelar</button><button class="primary-button" type="button" (click)="applyAction()">Confirmar</button></footer></article></div>
+    <div class="modal-backdrop" *ngIf="passwordReset" (click)="closePasswordReset()"><article class="detail-modal" role="dialog" aria-modal="true" aria-label="Redefinir senha" (click)="$event.stopPropagation()"><button class="close-button" type="button" (click)="closePasswordReset()" aria-label="Fechar"><tp-icon name="close"></tp-icon></button><p class="eyebrow">Usuários</p><h2>Redefinir senha</h2><ng-container *ngIf="!temporaryPassword; else temporaryPasswordResult"><p>Defina uma nova senha para <b>{{ passwordReset.row.name }}</b> ou gere uma senha temporária.</p><form class="password-reset-options" [formGroup]="passwordResetForm" (ngSubmit)="submitPasswordReset()"><div class="reset-mode"><label><input type="radio" [checked]="passwordResetMode === 'SET'" (change)="setPasswordResetMode('SET')">Definir nova senha</label><label><input type="radio" [checked]="passwordResetMode === 'TEMPORARY'" (change)="setPasswordResetMode('TEMPORARY')">Gerar senha temporária</label></div><ng-container *ngIf="passwordResetMode === 'SET'"><label class="form-field">Nova senha<input type="password" formControlName="password" autocomplete="new-password"></label><label class="form-field">Confirmar nova senha<input type="password" formControlName="confirmation" autocomplete="new-password"></label></ng-container><p *ngIf="passwordResetMode === 'TEMPORARY'">A senha será exibida uma única vez e o usuário deverá alterá-la no próximo acesso.</p><p class="form-alert error" *ngIf="passwordResetError">{{ passwordResetError }}</p><footer><button class="secondary-button" type="button" (click)="closePasswordReset()">Cancelar</button><button class="primary-button" type="submit" [disabled]="passwordResetSaving">{{ passwordResetSaving ? 'Redefinindo…' : 'Confirmar redefinição' }}</button></footer></form></ng-container><ng-template #temporaryPasswordResult><p>Entregue esta senha ao usuário por um canal seguro. Ela não será exibida novamente.</p><div class="temporary-password"><code>{{ temporaryPassword }}</code></div><footer><button class="primary-button" type="button" (click)="closePasswordReset()">Concluído</button></footer></ng-template></article></div>
   `,
 })
 export class AdminResourceComponent implements OnInit {
@@ -73,11 +74,20 @@ export class AdminResourceComponent implements OnInit {
   mode?: 'create' | 'edit' | 'view';
   selected?: Row;
   pendingAction?: { row: Row };
+  passwordReset?: { row: Row };
+  passwordResetSaving = false;
+  passwordResetError = '';
+  temporaryPassword?: string;
+  passwordResetForm = new FormGroup({
+    mode: new FormControl<'SET' | 'TEMPORARY'>('SET', { nonNullable: true }),
+    password: new FormControl('', { nonNullable: true }),
+    confirmation: new FormControl('', { nonNullable: true }),
+  });
   private lastFocused?: HTMLElement;
   readonly weekDays = [{ value: 1, label: 'Seg' }, { value: 2, label: 'Ter' }, { value: 3, label: 'Qua' }, { value: 4, label: 'Qui' }, { value: 5, label: 'Sex' }, { value: 6, label: 'Sáb' }, { value: 7, label: 'Dom' }];
 
   ngOnInit(): void { this.loadOptions(); this.load(); }
-  @HostListener('document:keydown.escape') onEscape(): void { if (this.mode) this.closeModal(); else this.pendingAction = undefined; }
+  @HostListener('document:keydown.escape') onEscape(): void { if (this.passwordReset) this.closePasswordReset(); else if (this.mode) this.closeModal(); else this.pendingAction = undefined; }
   get modalTitle(): string { return this.mode === 'create' ? `Novo ${this.definition.singular}` : this.mode === 'edit' ? `Editar ${this.definition.singular}` : `Detalhes do ${this.definition.singular}`; }
   inputValue(event: Event): string { return (event.target as HTMLInputElement | HTMLSelectElement).value; }
   setFilter(key: string, value: string): void { this.filters[key] = value; }
@@ -98,6 +108,38 @@ export class AdminResourceComponent implements OnInit {
   openView(row: Row): void { this.open('view', row); }
   confirm(row: Row): void { this.pendingAction = { row }; }
   closeModal(): void { this.mode = undefined; this.selected = undefined; this.modalError = ''; setTimeout(() => this.lastFocused?.focus()); }
+  get passwordResetMode(): 'SET' | 'TEMPORARY' { return this.passwordResetForm.controls.mode.value; }
+  openPasswordReset(row: Row): void { this.lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : undefined; this.passwordReset = { row }; this.passwordResetError = ''; this.temporaryPassword = undefined; this.passwordResetForm.reset({ mode: 'SET', password: '', confirmation: '' }); }
+  closePasswordReset(): void { this.passwordReset = undefined; this.passwordResetError = ''; this.temporaryPassword = undefined; this.passwordResetForm.reset({ mode: 'SET', password: '', confirmation: '' }); setTimeout(() => this.lastFocused?.focus()); }
+  setPasswordResetMode(mode: 'SET' | 'TEMPORARY'): void { this.passwordResetForm.controls.mode.setValue(mode); this.passwordResetError = ''; }
+
+  submitPasswordReset(): void {
+    const reset = this.passwordReset;
+    if (!reset) return;
+    const { mode, password, confirmation } = this.passwordResetForm.getRawValue();
+    if (mode === 'SET' && (!password || password !== confirmation)) {
+      this.passwordResetError = !password ? 'Informe a nova senha.' : 'A confirmação da senha não confere.';
+      return;
+    }
+    this.passwordResetSaving = true;
+    this.passwordResetError = '';
+    this.api.resetUserPassword<Row>(reset.row.id, mode === 'SET' ? { mode, password } : { mode }).subscribe({
+      next: (response) => {
+        this.passwordResetSaving = false;
+        if (response.temporaryPassword) {
+          this.temporaryPassword = response.temporaryPassword;
+          return;
+        }
+        this.closePasswordReset();
+        this.notice = 'Senha redefinida e sessões ativas invalidadas com sucesso.';
+      },
+      error: (response: { error?: { message?: string | string[] } }) => {
+        const message = response.error?.message;
+        this.passwordResetError = Array.isArray(message) ? message.join(' ') : message || 'Não foi possível redefinir a senha.';
+        this.passwordResetSaving = false;
+      },
+    });
+  }
 
   save(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); this.modalError = 'Revise os campos obrigatórios.'; return; }
@@ -109,8 +151,12 @@ export class AdminResourceComponent implements OnInit {
 
   applyAction(): void {
     const row = this.pendingAction?.row; if (!row) return;
-    const request = row.active === false ? this.api.update<Row>(this.definition.endpoint, row.id, { active: true }) : this.api.inactivate<Row>(this.definition.endpoint, row.id);
-    request.subscribe({ next: () => { this.pendingAction = undefined; this.notice = row.active === false ? 'Cadastro reativado com sucesso.' : 'Cadastro inativado com sucesso.'; this.load(this.pagination.page); }, error: () => { this.pendingAction = undefined; this.error = 'A operação não pôde ser concluída.'; } });
+    const request = row.active === false
+      ? this.definition.endpoint === 'periodicities'
+        ? this.api.reactivatePeriodicity<Row>(row.id)
+        : this.api.update<Row>(this.definition.endpoint, row.id, { active: true })
+      : this.api.inactivate<Row>(this.definition.endpoint, row.id);
+    request.subscribe({ next: () => { this.pendingAction = undefined; this.notice = row.active === false ? 'Cadastro reativado com sucesso.' : 'Cadastro inativado com sucesso.'; this.load(this.pagination.page); }, error: (response: { error?: { message?: string | string[] } }) => { const message = response.error?.message; this.pendingAction = undefined; this.error = Array.isArray(message) ? message.join(' ') : message || 'Não foi possível concluir a operação.'; } });
   }
 
   private open(mode: 'create' | 'edit' | 'view', selected?: Row): void {

@@ -19,6 +19,8 @@ interface PeriodicityConfiguration {
   month?: number | null;
 }
 
+const REACTIVATION_HORIZON_DAYS = 90;
+
 @Injectable()
 export class PeriodicitiesService {
   constructor(
@@ -187,6 +189,46 @@ export class PeriodicitiesService {
       await this.deletePendingFutureOccurrences(tx, id);
       return periodicity;
     });
+  }
+
+  async reactivate(id: string) {
+    const current = await this.findOne(id);
+
+    if (current.active) {
+      return current;
+    }
+
+    try {
+      this.validateConfiguration(current);
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw new BadRequestException(
+          `Não foi possível reativar a periodicidade: ${error.message}`,
+        );
+      }
+      throw error;
+    }
+
+    const periodicity = await this.prisma.periodicity.update({
+      where: { id },
+      data: { active: true },
+    });
+
+    const tasks = await this.prisma.task.findMany({
+      where: { periodicityId: id, active: true },
+      select: { id: true },
+    });
+    const from = this.today();
+    const to = new Date(from);
+    to.setUTCDate(to.getUTCDate() + REACTIVATION_HORIZON_DAYS);
+
+    await this.generator.generateForTasks(
+      tasks.map((task) => task.id),
+      from,
+      to,
+    );
+
+    return periodicity;
   }
 
   private async ensureNameAvailable(

@@ -4,14 +4,24 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { RedisService } from '../../database/redis/redis.service';
+import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
+import {
+  PasswordResetMode,
+  ResetUserPasswordDto,
+} from './dto/reset-user-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
 
   async create(dto: CreateUserDto) {
     const email = dto.email.trim().toLowerCase();
@@ -133,16 +143,11 @@ export class UsersService {
       await this.validatePosition(dto.positionId);
     }
 
-    const passwordHash = dto.password
-      ? await argon2.hash(dto.password)
-      : undefined;
-
     const user = await this.prisma.user.update({
       where: { id },
       data: {
         ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
         ...(email !== undefined ? { email } : {}),
-        ...(passwordHash !== undefined ? { passwordHash } : {}),
         ...(dto.roleId !== undefined ? { roleId: dto.roleId } : {}),
         ...(dto.positionId !== undefined ? { positionId: dto.positionId } : {}),
         ...(dto.active !== undefined ? { active: dto.active } : {}),
@@ -173,6 +178,57 @@ export class UsersService {
     });
 
     return this.sanitize(user);
+  }
+
+  async resetPassword(
+    id: string,
+    dto: ResetUserPasswordDto,
+    actor: JwtPayload,
+  ) {
+    await this.findExistingUser(id);
+
+    const temporaryPassword =
+      dto.mode === PasswordResetMode.TEMPORARY
+        ? this.generateTemporaryPassword()
+        : undefined;
+    const password = temporaryPassword ?? dto.password!;
+    const passwordHash = await argon2.hash(password);
+    const invalidatedSessions = await this.redis.invalidateUserSessions(id);
+
+    const user = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.user.update({
+        where: { id },
+        data: {
+          passwordHash,
+          mustChangePassword: dto.mode === PasswordResetMode.TEMPORARY,
+        },
+        include: {
+          role: true,
+          position: true,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          actorUserId: actor.sub,
+          action: 'USER_PASSWORD_RESET',
+          entityType: 'User',
+          entityId: id,
+          metadata: {
+            resetMode: dto.mode,
+            invalidatedSessions,
+          },
+        },
+      });
+
+      return updated;
+    });
+
+    return {
+      user: this.sanitize(user),
+      invalidatedSessions,
+      ...(temporaryPassword ? { temporaryPassword } : {}),
+    };
   }
 
   private async validateRole(roleId: string): Promise<void> {
@@ -243,6 +299,11 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  private generateTemporaryPassword(): string {
+    const random = randomBytes(18).toString('base64url');
+    return `Tp!A1${random}`;
   }
 
   private sanitize<T extends { passwordHash: string }>(

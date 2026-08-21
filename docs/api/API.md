@@ -472,11 +472,50 @@ Exemplo:
 }
 ```
 
-Também é possível alterar a senha:
+Também é possível atualizar o estado do usuário:
 
 ```json
 {
-  "password": "NovaSenha123"
+  "active": false
+}
+```
+
+Para alterar uma senha, utilize o endpoint específico de redefinição abaixo.
+
+---
+
+## Redefinir senha de usuário
+
+### `PATCH /api/users/:id/password`
+
+Disponível somente para administradores. A operação usa Argon2, invalida todas
+as sessões de refresh ativas do usuário afetado e registra a auditoria sem
+armazenar a senha.
+
+Para definir uma senha escolhida pelo administrador:
+
+```json
+{
+  "mode": "SET",
+  "password": "NovaSenha123!"
+}
+```
+
+Para gerar uma senha temporária, exibida uma única vez na resposta:
+
+```json
+{
+  "mode": "TEMPORARY"
+}
+```
+
+A senha temporária exige a troca pelo próprio usuário no próximo login, por
+meio de `PATCH /api/auth/password`:
+
+```json
+{
+  "currentPassword": "SenhaTemporaria123!",
+  "newPassword": "MinhaNovaSenha123!"
 }
 ```
 
@@ -593,6 +632,7 @@ SPECIFIC_MONTH_DAY
 FIRST_BUSINESS_DAY
 LAST_BUSINESS_DAY
 CUSTOM_INTERVAL
+MONTHLY_DAY_RANGE
 ```
 
 ---
@@ -619,6 +659,7 @@ CUSTOM_INTERVAL
   "name": "Semanal",
   "type": "WEEKLY",
   "interval": 1,
+  "daysOfWeek": [1, 3, 5],
   "active": true
 }
 ```
@@ -652,6 +693,31 @@ Convenção utilizada:
 6 = Sábado
 7 = Domingo
 ```
+
+## Faixa de dias mensal
+
+```json
+{
+  "name": "Dias 12 a 20",
+  "type": "MONTHLY_DAY_RANGE",
+  "interval": 1,
+  "startDayOfMonth": 12,
+  "endDayOfMonth": 20,
+  "active": true
+}
+```
+
+O intervalo é inclusivo: a agenda contém todas as datas válidas entre os dois
+limites. Quando datas diferentes são antecipadas para o mesmo dia útil, cada
+data original continua sendo uma ocorrência distinta.
+
+## Reativar periodicidade
+
+### `PATCH /api/periodicities/:id/reactivate`
+
+Reativa uma periodicidade inativa e materializa novamente até 90 dias de
+ocorrências futuras para as tarefas ativas associadas. Configurações inválidas
+retornam uma mensagem específica sem alterar o estado da periodicidade.
 
 ---
 
@@ -1951,6 +2017,7 @@ PATCH /:id/complete
 POST   /api/auth/login
 POST   /api/auth/refresh
 POST   /api/auth/logout
+PATCH  /api/auth/password
 GET    /api/auth/me
 ```
 
@@ -1987,6 +2054,7 @@ POST   /api/users
 GET    /api/users
 GET    /api/users/:id
 PATCH  /api/users/:id
+PATCH  /api/users/:id/password
 DELETE /api/users/:id
 ```
 
@@ -2007,6 +2075,7 @@ POST   /api/periodicities
 GET    /api/periodicities
 GET    /api/periodicities/:id
 PATCH  /api/periodicities/:id
+PATCH  /api/periodicities/:id/reactivate
 DELETE /api/periodicities/:id
 ```
 

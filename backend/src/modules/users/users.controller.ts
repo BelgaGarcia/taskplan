@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
 import {
   ApiConflictResponse,
@@ -21,12 +22,14 @@ import {
 import { CreateUserDto } from './dto/create-user.dto';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ResetUserPasswordDto } from './dto/reset-user-password.dto';
 import { UsersService } from './users.service';
 import { UseGuards } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import type { AuthenticatedRequest } from '../auth/guards/jwt-auth.guard';
 @ApiTags('Usuários')
 @Controller('users')
 @ApiTags('Usuários')
@@ -71,6 +74,18 @@ export class UsersController {
     @Body() dto: UpdateUserDto,
   ) {
     return this.usersService.update(id, dto);
+  }
+
+  @Patch(':id/password')
+  @ApiOperation({
+    summary: 'Redefinir a senha de outro usuário como administrador',
+  })
+  resetPassword(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: ResetUserPasswordDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.usersService.resetPassword(id, dto, request.user!);
   }
 
   @Delete(':id')
