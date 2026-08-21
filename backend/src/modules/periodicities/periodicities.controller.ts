@@ -48,6 +48,11 @@ export class PeriodicitiesController {
   }
 
   @Patch(':id')
+  @ApiOperation({
+    summary: 'Atualizar periodicidade',
+    description:
+      'Alterações materiais removem somente ocorrências PENDING futuras. A agenda deve ser gerada novamente pelo endpoint de geração.',
+  })
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdatePeriodicityDto,

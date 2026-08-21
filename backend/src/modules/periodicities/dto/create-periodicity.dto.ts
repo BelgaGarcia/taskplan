@@ -28,6 +28,8 @@ export class CreatePeriodicityDto {
   @ApiProperty({
     enum: PeriodicityType,
     example: PeriodicityType.MONTHLY,
+    description:
+      'EVERY_FOUR_MONTHS usa ciclos de quatro meses ancorados no início da tarefa.',
   })
   @IsEnum(PeriodicityType)
   type!: PeriodicityType;
@@ -35,6 +37,8 @@ export class CreatePeriodicityDto {
   @ApiPropertyOptional({
     example: 1,
     default: 1,
+    description:
+      'Multiplicador do ciclo. Em EVERY_FOUR_MONTHS, 1 equivale a quatro meses.',
   })
   @IsOptional()
   @IsInt()
@@ -54,6 +58,8 @@ export class CreatePeriodicityDto {
 
   @ApiPropertyOptional({
     example: 15,
+    description:
+      'Dia do mês; quando omitido em EVERY_FOUR_MONTHS, usa o dia inicial da tarefa.',
   })
   @IsOptional()
   @IsInt()

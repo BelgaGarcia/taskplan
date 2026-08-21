@@ -5,19 +5,51 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import {
+  NonexistentDayRule,
+  PeriodicityType,
+} from '../../generated/prisma/client';
 import { OccurrenceGeneratorService } from '../task-occurrences/occurrence-generator.service';
 import { CreatePeriodicityDto } from './dto/create-periodicity.dto';
 import { ListPeriodicitiesQueryDto } from './dto/list-periodicities-query.dto';
 import { UpdatePeriodicityDto } from './dto/update-periodicity.dto';
 
 interface PeriodicityConfiguration {
-  type?: string;
+  type?: PeriodicityType;
+  interval?: number;
   daysOfWeek?: number[] | null;
   dayOfMonth?: number | null;
   startDayOfMonth?: number | null;
   endDayOfMonth?: number | null;
   month?: number | null;
+  nonexistentDayRule?: NonexistentDayRule;
 }
+
+interface NormalizedConfiguration {
+  type: PeriodicityType;
+  interval: number;
+  daysOfWeek: number[];
+  dayOfMonth: number | null;
+  startDayOfMonth: number | null;
+  endDayOfMonth: number | null;
+  month: number | null;
+  nonexistentDayRule: NonexistentDayRule;
+}
+
+const WEEKDAY_TYPES = new Set<PeriodicityType>([
+  PeriodicityType.WEEKLY,
+  PeriodicityType.SPECIFIC_WEEKDAYS,
+]);
+const MONTH_DAY_TYPES = new Set<PeriodicityType>([
+  PeriodicityType.MONTHLY,
+  PeriodicityType.BIMONTHLY,
+  PeriodicityType.EVERY_FOUR_MONTHS,
+  PeriodicityType.QUARTERLY,
+  PeriodicityType.SEMIANNUAL,
+  PeriodicityType.ANNUAL,
+  PeriodicityType.SPECIFIC_MONTH_DAY,
+]);
+const NONEXISTENT_DAY_TYPES = new Set<PeriodicityType>([...MONTH_DAY_TYPES]);
 
 const REACTIVATION_HORIZON_DAYS = 90;
 
@@ -32,19 +64,13 @@ export class PeriodicitiesService {
     const name = dto.name.trim();
 
     await this.ensureNameAvailable(name);
-    this.validateConfiguration(dto);
+    const configuration = this.normalizeConfiguration(dto);
+    this.validateConfiguration(configuration);
 
     return this.prisma.periodicity.create({
       data: {
         name,
-        type: dto.type,
-        interval: dto.interval ?? 1,
-        daysOfWeek: dto.daysOfWeek ?? [],
-        dayOfMonth: dto.dayOfMonth ?? null,
-        startDayOfMonth: dto.startDayOfMonth ?? null,
-        endDayOfMonth: dto.endDayOfMonth ?? null,
-        month: dto.month ?? null,
-        nonexistentDayRule: dto.nonexistentDayRule,
+        ...configuration,
         active: dto.active ?? true,
       },
     });
@@ -116,49 +142,33 @@ export class PeriodicitiesService {
       }
     }
 
-    this.validateConfiguration({
-      ...current,
-      ...dto,
-    });
+    const typeChanged = dto.type !== undefined && dto.type !== current.type;
+    const configurationSource = typeChanged
+      ? {
+          type: dto.type,
+          interval: dto.interval ?? current.interval,
+          daysOfWeek: dto.daysOfWeek,
+          dayOfMonth: dto.dayOfMonth,
+          startDayOfMonth: dto.startDayOfMonth,
+          endDayOfMonth: dto.endDayOfMonth,
+          month: dto.month,
+          nonexistentDayRule: dto.nonexistentDayRule,
+        }
+      : { ...current, ...dto };
+    const currentConfiguration = this.normalizeConfiguration(current);
+    const nextConfiguration = this.normalizeConfiguration(configurationSource);
+    this.validateConfiguration(nextConfiguration);
+    const materiallyChanged = !this.sameConfiguration(
+      currentConfiguration,
+      nextConfiguration,
+    );
 
-    const pendingFuture = await this.findPendingFutureOccurrences(id);
-    const nextActive = dto.active ?? current.active;
     const data = {
       ...(dto.name !== undefined && {
         name: dto.name.trim(),
       }),
 
-      ...(dto.type !== undefined && {
-        type: dto.type,
-      }),
-
-      ...(dto.interval !== undefined && {
-        interval: dto.interval,
-      }),
-
-      ...(dto.daysOfWeek !== undefined && {
-        daysOfWeek: dto.daysOfWeek,
-      }),
-
-      ...(dto.dayOfMonth !== undefined && {
-        dayOfMonth: dto.dayOfMonth,
-      }),
-
-      ...(dto.startDayOfMonth !== undefined && {
-        startDayOfMonth: dto.startDayOfMonth,
-      }),
-
-      ...(dto.endDayOfMonth !== undefined && {
-        endDayOfMonth: dto.endDayOfMonth,
-      }),
-
-      ...(dto.month !== undefined && {
-        month: dto.month,
-      }),
-
-      ...(dto.nonexistentDayRule !== undefined && {
-        nonexistentDayRule: dto.nonexistentDayRule,
-      }),
+      ...nextConfiguration,
 
       ...(dto.active !== undefined && {
         active: dto.active,
@@ -167,13 +177,11 @@ export class PeriodicitiesService {
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const periodicity = await tx.periodicity.update({ where: { id }, data });
-      await this.deletePendingFutureOccurrences(tx, id);
+      if (materiallyChanged) {
+        await this.deletePendingFutureOccurrences(tx, id);
+      }
       return periodicity;
     });
-
-    if (nextActive) {
-      await this.regenerateMaterializedHorizon(pendingFuture);
-    }
 
     return updated;
   }
@@ -298,15 +306,45 @@ export class PeriodicitiesService {
     }
   }
 
-  private async findPendingFutureOccurrences(periodicityId: string) {
-    return this.prisma.taskOccurrence.findMany({
-      where: {
-        status: 'PENDING',
-        originalDate: { gte: this.today() },
-        task: { periodicityId },
-      },
-      select: { taskId: true, originalDate: true },
-    });
+  private normalizeConfiguration(
+    dto: PeriodicityConfiguration,
+  ): NormalizedConfiguration {
+    if (!dto.type) {
+      throw new BadRequestException('O tipo da periodicidade é obrigatório.');
+    }
+
+    const type = dto.type;
+    const daysOfWeek = WEEKDAY_TYPES.has(type)
+      ? Array.from(new Set(dto.daysOfWeek ?? [])).sort(
+          (first, second) => first - second,
+        )
+      : [];
+
+    return {
+      type,
+      interval: Math.max(dto.interval ?? 1, 1),
+      daysOfWeek,
+      dayOfMonth: MONTH_DAY_TYPES.has(type) ? (dto.dayOfMonth ?? null) : null,
+      startDayOfMonth:
+        type === PeriodicityType.MONTHLY_DAY_RANGE
+          ? (dto.startDayOfMonth ?? null)
+          : null,
+      endDayOfMonth:
+        type === PeriodicityType.MONTHLY_DAY_RANGE
+          ? (dto.endDayOfMonth ?? null)
+          : null,
+      month: type === PeriodicityType.ANNUAL ? (dto.month ?? null) : null,
+      nonexistentDayRule: NONEXISTENT_DAY_TYPES.has(type)
+        ? (dto.nonexistentDayRule ?? NonexistentDayRule.PREVIOUS_DAY)
+        : NonexistentDayRule.PREVIOUS_DAY,
+    };
+  }
+
+  private sameConfiguration(
+    current: NormalizedConfiguration,
+    next: NormalizedConfiguration,
+  ): boolean {
+    return JSON.stringify(current) === JSON.stringify(next);
   }
 
   private deletePendingFutureOccurrences(
@@ -320,23 +358,6 @@ export class PeriodicitiesService {
         task: { periodicityId },
       },
     });
-  }
-
-  private async regenerateMaterializedHorizon(
-    occurrences: Array<{ taskId: string; originalDate: Date }>,
-  ) {
-    const horizons = new Map<string, Date>();
-    for (const occurrence of occurrences) {
-      const current = horizons.get(occurrence.taskId);
-      if (!current || occurrence.originalDate > current) {
-        horizons.set(occurrence.taskId, occurrence.originalDate);
-      }
-    }
-
-    const from = this.today();
-    for (const [taskId, to] of horizons) {
-      await this.generator.generateForTasks([taskId], from, to);
-    }
   }
 
   private today(): Date {

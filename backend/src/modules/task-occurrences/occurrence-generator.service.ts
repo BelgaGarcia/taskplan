@@ -194,6 +194,14 @@ export class OccurrenceGeneratorService {
           2 * task.periodicity.interval,
         );
 
+      case 'EVERY_FOUR_MONTHS':
+        return this.generateMonthly(
+          task,
+          start,
+          end,
+          4 * task.periodicity.interval,
+        );
+
       case 'QUARTERLY':
         return this.generateMonthly(
           task,
@@ -214,7 +222,7 @@ export class OccurrenceGeneratorService {
         return this.generateAnnual(task, start, end);
 
       case 'SPECIFIC_WEEKDAYS':
-        return this.generateSpecificWeekdays(task, start, end);
+        return this.generateWeekly(task, start, end);
 
       case 'SPECIFIC_MONTH_DAY':
         return this.generateSpecificMonthDay(task, start, end);
@@ -419,31 +427,6 @@ export class OccurrenceGeneratorService {
       }
 
       year += intervalYears;
-    }
-
-    return result;
-  }
-
-  private generateSpecificWeekdays(
-    task: TaskWithPeriodicity,
-    start: Date,
-    end: Date,
-  ): Date[] {
-    const allowed = new Set(task.periodicity.daysOfWeek);
-
-    const result: Date[] = [];
-    const cursor = new Date(start);
-
-    while (cursor <= end) {
-      const day = cursor.getUTCDay();
-
-      const isoDay = day === 0 ? 7 : day;
-
-      if (allowed.has(isoDay)) {
-        result.push(new Date(cursor));
-      }
-
-      cursor.setUTCDate(cursor.getUTCDate() + 1);
     }
 
     return result;
