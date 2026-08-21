@@ -18,7 +18,7 @@ import type {
 import { IconComponent } from '../shared/icon.component';
 
 type CalendarView = 'month' | 'workweek' | 'week' | 'day';
-type ModalMode = 'details' | 'complete' | 'reschedule' | 'generate' | 'delete';
+type ModalMode = 'details' | 'complete' | 'reschedule' | 'generate' | 'delete' | 'more';
 
 @Component({
   standalone: true,
@@ -61,7 +61,7 @@ type ModalMode = 'details' | 'complete' | 'reschedule' | 'generate' | 'delete';
           <ng-container *ngIf="view === 'day'; else calendarGrid">
             <section class="day-calendar" [attr.aria-label]="'Agenda de ' + (current | date:'dd/MM/yyyy')"><header>{{ dayLabel }}</header><div class="day-time-grid"><div class="hour-row" *ngFor="let hour of timeSlots"><time>{{ hour }}</time></div><button type="button" class="day-event" *ngFor="let occurrence of timedEventsFor(current)" [class]="'day-event ' + statusTone(occurrence.status)" [style.top.%]="eventPosition(occurrence)" [style.height.px]="eventHeight(occurrence)" (click)="openOccurrence(occurrence)"><span>{{ occurrence.scheduledTime }}</span><b>{{ occurrence.task.name }}</b><small>{{ occurrence.task.function?.name || 'Sem função' }}</small></button><div *ngIf="showCurrentTime" class="current-time-line" [style.top.%]="currentTimePosition"><i></i><span class="sr-only">Horário atual</span></div></div><p *ngIf="!timedEventsFor(current).length" class="day-empty-state">Sem ocorrências com horário neste dia.</p></section>
           </ng-container>
-          <ng-template #calendarGrid><div class="month-calendar" [class.week-mode]="view !== 'month'" [class.workweek-mode]="view === 'workweek'" [class.month-mode]="view === 'month'"><header class="weekday-row"><span *ngFor="let day of shownWeekdays">{{ day }}</span></header><div class="calendar-grid"><article *ngFor="let day of visibleDays" class="calendar-day" [class.other-month]="view === 'month' && day.getMonth() !== current.getMonth()" [class.selected-day]="sameDate(day, selectedDate)"><button type="button" class="day-number" (click)="selectDate(day)" [class.today]="sameDate(day, todayDate)">{{ day.getDate() }}</button><button type="button" class="calendar-event" *ngFor="let occurrence of eventsFor(day) | slice:0:4" [class]="'calendar-event ' + statusTone(occurrence.status)" (click)="openOccurrence(occurrence)"><i [class]="'dot ' + statusTone(occurrence.status)"></i><span>{{ occurrence.scheduledTime || 'Sem horário' }}</span><b>{{ occurrence.task.name }}</b><small>{{ occurrence.task.function?.name || 'Sem função' }}</small></button><button type="button" *ngIf="eventsFor(day).length > 4" class="more-events" (click)="selectDate(day)">+{{ eventsFor(day).length - 4 }} mais</button></article></div></div></ng-template>
+          <ng-template #calendarGrid><div class="month-calendar" [class.week-mode]="view !== 'month'" [class.workweek-mode]="view === 'workweek'" [class.month-mode]="view === 'month'"><header class="weekday-row"><span *ngFor="let day of shownWeekdays">{{ day }}</span></header><div class="calendar-grid"><article *ngFor="let day of visibleDays" class="calendar-day" [class.other-month]="view === 'month' && day.getMonth() !== current.getMonth()" [class.selected-day]="sameDate(day, selectedDate)"><button type="button" class="day-number" (click)="selectDate(day)" [class.today]="sameDate(day, todayDate)">{{ day.getDate() }}</button><button type="button" class="calendar-event" *ngFor="let occurrence of eventsFor(day) | slice:0:4" [class]="'calendar-event ' + statusTone(occurrence.status)" (click)="openOccurrence(occurrence)"><i [class]="'dot ' + statusTone(occurrence.status)"></i><span>{{ occurrence.scheduledTime || 'Sem horário' }}</span><b>{{ occurrence.task.name }}</b><small>{{ occurrence.task.function?.name || 'Sem função' }}</small></button><button type="button" *ngIf="eventsFor(day).length > 4" class="more-events" [attr.aria-label]="'Mostrar ' + (eventsFor(day).length - 4) + ' atividades adicionais em ' + (day | date:'dd/MM/yyyy')" (click)="openMoreEvents(day)">+{{ eventsFor(day).length - 4 }} mais</button></article></div></div></ng-template>
           <article class="mobile-agenda"><header><div><p class="eyebrow">Agenda do dia</p><h2>{{ selectedDate | date:'dd/MM/yyyy' }}</h2></div><button class="secondary-button" type="button" (click)="goToday()">Hoje</button></header><button type="button" class="agenda-item" *ngFor="let occurrence of eventsFor(selectedDate)" (click)="openOccurrence(occurrence)"><span>{{ occurrence.scheduledTime || '—' }}</span><div><b>{{ occurrence.task.name }}</b><small>{{ occurrence.task.function?.name || 'Sem função' }}</small></div><i [class]="'dot ' + statusTone(occurrence.status)"></i></button><p *ngIf="!eventsFor(selectedDate).length" class="empty-state">Sem ocorrências neste dia.</p></article>
         </ng-container>
       </div>
@@ -70,10 +70,17 @@ type ModalMode = 'details' | 'complete' | 'reschedule' | 'generate' | 'delete';
     <div class="modal-backdrop" *ngIf="modal" (click)="closeModal()">
       <article [class]="modal === 'delete' ? 'confirm-modal occurrence-modal' : 'detail-modal occurrence-modal'" [attr.role]="modal === 'delete' ? 'alertdialog' : 'dialog'" aria-modal="true" [attr.aria-label]="modalTitle" (click)="$event.stopPropagation()">
         <button type="button" class="close-button" (click)="closeModal()" aria-label="Fechar"><tp-icon name="close"></tp-icon></button>
-        <ng-container *ngIf="modal === 'generate'; else occurrenceModal">
+        <ng-container *ngIf="modal === 'generate'; else calendarModal">
           <p class="eyebrow">Administração</p><h2>Gerar agenda</h2><p>Gera apenas ocorrências que ainda não existem no intervalo informado.</p>
           <form [formGroup]="generationForm" (ngSubmit)="generate()"><label class="form-field"><span>Data inicial</span><input type="date" formControlName="from"></label><label class="form-field"><span>Data final</span><input type="date" formControlName="to"></label><p class="form-alert error" *ngIf="modalError">{{ modalError }}</p><footer><button type="button" class="secondary-button" (click)="closeModal()">Cancelar</button><button type="submit" class="primary-button" [disabled]="acting">{{ acting ? 'Gerando…' : 'Gerar agenda' }}</button></footer></form>
         </ng-container>
+        <ng-template #calendarModal>
+          <ng-container *ngIf="modal === 'more'; else occurrenceModal">
+            <p class="eyebrow">Agenda do dia</p><h2>Outras atividades em {{ moreDate | date:'dd/MM/yyyy' }}</h2><p>Selecione uma atividade para ver seus detalhes.</p>
+            <div class="calendar-more-list"><button type="button" *ngFor="let occurrence of moreEvents" class="calendar-more-event" (click)="openOccurrence(occurrence)"><i [class]="'dot ' + statusTone(occurrence.status)"></i><span>{{ occurrence.scheduledTime || 'Sem horário' }}</span><strong>{{ occurrence.task.name }}</strong><small>{{ occurrence.task.function?.name || 'Sem função' }}</small></button></div>
+            <footer><button type="button" class="primary-button" (click)="closeModal()">Fechar</button></footer>
+          </ng-container>
+        </ng-template>
         <ng-template #occurrenceModal>
           <ng-container *ngIf="selected">
             <ng-container *ngIf="modal === 'delete'; else occurrenceDetails">
@@ -117,6 +124,8 @@ export class CalendarComponent implements OnInit, OnDestroy {
   generationForm = new FormGroup({ from: new FormControl(this.dateKey(this.firstOfMonth(new Date())), { validators: [Validators.required] }), to: new FormControl(this.dateKey(this.endOfMonth(new Date())), { validators: [Validators.required] }) });
   selected?: Occurrence;
   modal?: ModalMode;
+  moreDate?: Date;
+  moreEvents: Occurrence[] = [];
   filtersOpen = false;
   loading = false;
   acting = false;
@@ -137,7 +146,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
   get periodLabel(): string { if (this.view === 'month') return this.monthName(this.current); if (this.view === 'day') return new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }).format(this.current); const days = this.visibleDays; return `${days[0].getDate()} – ${days[days.length - 1].getDate()} de ${this.monthName(days[0])}`; }
   get showCurrentTime(): boolean { return this.sameDate(this.current, this.now); }
   get currentTimePosition(): number { return ((this.now.getHours() * 60 + this.now.getMinutes()) / 1440) * 100; }
-  get modalTitle(): string { return this.modal === 'generate' ? 'Gerar agenda' : this.modal === 'delete' ? 'Excluir ocorrência da agenda' : this.selected?.task.name || 'Detalhes da ocorrência'; }
+  get modalTitle(): string { return this.modal === 'generate' ? 'Gerar agenda' : this.modal === 'delete' ? 'Excluir ocorrência da agenda' : this.modal === 'more' ? 'Outras atividades do dia' : this.selected?.task.name || 'Detalhes da ocorrência'; }
 
   ngOnInit(): void { this.api.occurrenceOptions().subscribe({ next: (options) => this.options = options }); this.clock = setInterval(() => this.now = new Date(), 60000); this.load(); }
   ngOnDestroy(): void { if (this.clock) clearInterval(this.clock); }
@@ -151,9 +160,10 @@ export class CalendarComponent implements OnInit, OnDestroy {
   clearFilters(): void { this.filters.reset({ functionId: '', responsibleUserId: '', status: '' }); this.load(); }
   newTask(): void { void this.router.navigateByUrl('/tarefas'); }
   openGenerate(): void { this.openModal('generate'); }
+  openMoreEvents(day: Date): void { this.moreDate = this.stripTime(day); this.moreEvents = this.eventsFor(day).slice(4); this.openModal('more'); }
   openOccurrence(occurrence: Occurrence): void { this.selected = occurrence; this.rescheduleForm.reset({ scheduledDate: occurrence.scheduledDate.slice(0, 10), scheduledTime: occurrence.scheduledTime || '' }); this.executionForm.reset({ duration: this.toDuration(occurrence.actualDurationMinutes), result: occurrence.result || 'SUCCESS', notes: occurrence.notes || '' }); this.openModal('details'); }
   openDelete(): void { this.modal = 'delete'; this.modalError = ''; setTimeout(() => (document.querySelector('.occurrence-modal .danger-button') as HTMLElement | null)?.focus()); }
-  closeModal(): void { if (!this.modal) return; this.modal = undefined; this.selected = undefined; this.modalError = ''; setTimeout(() => this.lastFocused?.focus()); }
+  closeModal(): void { if (!this.modal) return; this.modal = undefined; this.selected = undefined; this.moreDate = undefined; this.moreEvents = []; this.modalError = ''; setTimeout(() => this.lastFocused?.focus()); }
   eventsFor(day: Date): Occurrence[] { return this.events.get(this.dateKey(day)) || []; }
   timedEventsFor(day: Date): Occurrence[] { return this.eventsFor(day).filter((occurrence) => Boolean(occurrence.scheduledTime)); }
   eventPosition(occurrence: Occurrence): number { const [hour, minute] = (occurrence.scheduledTime || '00:00').split(':').map(Number); return ((hour * 60 + minute) / 1440) * 100; }

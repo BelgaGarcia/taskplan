@@ -92,8 +92,8 @@ export class AdminResourceComponent implements OnInit {
   inputValue(event: Event): string { return (event.target as HTMLInputElement | HTMLSelectElement).value; }
   setFilter(key: string, value: string): void { this.filters[key] = value; }
   visible(field: Field): boolean { return !field.createOnly || this.mode === 'create' || !!field.when || field.key !== 'password' ? (!field.when || field.when(this.form.getRawValue() as Record<string, unknown>)) : false; }
-  hasWeekday(day: number): boolean { return String(this.form.controls['daysOfWeek']?.value || '').split(',').map(Number).includes(day); }
-  toggleWeekday(day: number, event: Event): void { const selected = new Set(String(this.form.controls['daysOfWeek']?.value || '').split(',').map(Number).filter(Number.isInteger)); (event.target as HTMLInputElement).checked ? selected.add(day) : selected.delete(day); this.form.controls['daysOfWeek']?.setValue(Array.from(selected).sort((a, b) => a - b).join(',')); }
+  hasWeekday(day: number): boolean { return this.weekdaysFrom(this.form.controls['daysOfWeek']?.value).includes(day); }
+  toggleWeekday(day: number, event: Event): void { const selected = new Set(this.weekdaysFrom(this.form.controls['daysOfWeek']?.value)); (event.target as HTMLInputElement).checked ? selected.add(day) : selected.delete(day); this.form.controls['daysOfWeek']?.setValue(Array.from(selected).sort((a, b) => a - b).join(',')); }
 
   load(page = this.pagination.page): void {
     this.loading = true; this.error = ''; this.notice = '';
@@ -183,7 +183,7 @@ export class AdminResourceComponent implements OnInit {
       const current = source[field.key];
       if (field.type === 'checkbox') { payload[field.key] = Boolean(current); continue; }
       if (field.type === 'number' && current !== '' && current !== null) { payload[field.key] = Number(current); continue; }
-      if (field.key === 'daysOfWeek' && typeof current === 'string') { payload[field.key] = current.split(',').map((item) => Number(item.trim())).filter((item) => Number.isInteger(item)); continue; }
+      if (field.key === 'daysOfWeek' && typeof current === 'string') { payload[field.key] = this.weekdaysFrom(current); continue; }
       if (current === '' || current === null) { if (field.nullable) payload[field.key] = null; continue; }
       payload[field.key] = current;
     }
@@ -196,6 +196,15 @@ export class AdminResourceComponent implements OnInit {
     if (field.key === 'displayOrder') return 0;
     if (field.key === 'nonexistentDayRule') return 'PREVIOUS_DAY';
     return null;
+  }
+
+  private weekdaysFrom(value: unknown): number[] {
+    return Array.from(new Set(
+      String(value ?? '')
+        .split(',')
+        .map((item) => Number(item.trim()))
+        .filter((item) => Number.isInteger(item) && item >= 1 && item <= 7),
+    )).sort((first, second) => first - second);
   }
 
   private formValue(row: Row, key: string): string | number | boolean | null {

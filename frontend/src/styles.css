@@ -148,6 +148,13 @@ dt { color: var(--muted); font-size: 11px; } dd { margin: 4px 0 0; font-size: 14
 .temporary-password { display: grid; gap: 8px; margin: 18px 0; padding: 14px; border: 1px solid #f1c76e; border-radius: 8px; background: #fff7df; }
 .temporary-password code { overflow-wrap: anywhere; color: #172033; font-size: 16px; font-weight: 750; }
 
+.calendar-more-list { display: grid; gap: 8px; margin: 18px 0; }
+.calendar-more-event { display: grid; grid-template-columns: auto 52px minmax(0, 1fr); align-items: center; gap: 9px; width: 100%; padding: 11px; border: 1px solid var(--line); border-radius: 7px; color: #243146; text-align: left; background: #fff; }
+.calendar-more-event:hover { border-color: #a9bae9; background: #f7f9ff; }
+.calendar-more-event strong, .calendar-more-event small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calendar-more-event small { grid-column: 3; color: var(--muted); font-size: 10px; }
+.calendar-more-event > span { color: var(--primary); font-size: 11px; font-weight: 750; }
+
 /* Login responsive guard: keeps both columns and form controls within the viewport. */
 .login-page { min-height: 100dvh; grid-template-columns: minmax(0, 1fr) minmax(0, 480px); overflow-x: clip; }
 .login-intro, .login-card, .login-card label, .login-card input { min-width: 0; }
