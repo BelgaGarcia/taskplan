@@ -1263,7 +1263,17 @@ CANCELLED
 
 ---
 
-# 33. Calendário
+# 33. Excluir ocorrência da agenda
+
+## `DELETE /api/task-occurrences/:id?scope=current`
+
+Disponível apenas para administradores. O escopo padrão `current` remove somente a ocorrência selecionada do calendário, preserva o cadastro da tarefa e registra uma exclusão para que a geração idempotente não recrie essa data.
+
+O escopo opcional `future` remove a ocorrência selecionada e as posteriores da mesma tarefa, ajustando a vigência da tarefa sem apagar seu cadastro.
+
+---
+
+# 34. Calendário
 
 ## `GET /api/task-occurrences/calendar`
 
@@ -1296,7 +1306,7 @@ GET /api/task-occurrences/calendar?from=2026-08-11&to=2026-08-31&status=PENDING
 
 ---
 
-# 34. Estrutura do calendário
+# 35. Estrutura do calendário
 
 Exemplo:
 
@@ -2032,6 +2042,7 @@ GET    /api/task-occurrences/:id
 PATCH  /api/task-occurrences/:id/start
 PATCH  /api/task-occurrences/:id/complete
 PATCH  /api/task-occurrences/:id/reschedule
+DELETE /api/task-occurrences/:id?scope=current
 ```
 
 ## Dashboard

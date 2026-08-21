@@ -28,7 +28,7 @@ A tabela administrativa é configurada por recurso, com colunas, filtros, campos
 
 ## Operação
 
-Cada cartão do calendário abre os detalhes da ocorrência. Quando `canOperate` for verdadeiro, o operador pode iniciar, concluir ou reagendar conforme o status. Duração é digitada como `hh:mm` e enviada à API em minutos; o resultado aceita sucesso, parcial ou erro, com observações. Ocorrências finais permanecem somente para consulta.
+Cada cartão do calendário abre os detalhes da ocorrência. Quando `canOperate` for verdadeiro, o operador pode iniciar, concluir ou reagendar conforme o status. Um administrador também pode excluir uma ocorrência específica da agenda após confirmação: a tarefa cadastrada e as demais datas permanecem inalteradas. Duração é digitada como `hh:mm` e enviada à API em minutos; o resultado aceita sucesso, parcial ou erro, com observações. Ocorrências finais permanecem somente para consulta.
 
 ## Acessibilidade
 
