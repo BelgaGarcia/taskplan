@@ -192,6 +192,8 @@ export type PositionWhereInput = {
   users?: Prisma.UserListRelationFilter
   responsibleFunctions?: Prisma.TaskFunctionListRelationFilter
   responsibleTasks?: Prisma.TaskListRelationFilter
+  inheritances?: Prisma.PositionInheritanceListRelationFilter
+  inheritedBy?: Prisma.PositionInheritanceListRelationFilter
 }
 
 export type PositionOrderByWithRelationInput = {
@@ -204,6 +206,8 @@ export type PositionOrderByWithRelationInput = {
   users?: Prisma.UserOrderByRelationAggregateInput
   responsibleFunctions?: Prisma.TaskFunctionOrderByRelationAggregateInput
   responsibleTasks?: Prisma.TaskOrderByRelationAggregateInput
+  inheritances?: Prisma.PositionInheritanceOrderByRelationAggregateInput
+  inheritedBy?: Prisma.PositionInheritanceOrderByRelationAggregateInput
 }
 
 export type PositionWhereUniqueInput = Prisma.AtLeast<{
@@ -219,6 +223,8 @@ export type PositionWhereUniqueInput = Prisma.AtLeast<{
   users?: Prisma.UserListRelationFilter
   responsibleFunctions?: Prisma.TaskFunctionListRelationFilter
   responsibleTasks?: Prisma.TaskListRelationFilter
+  inheritances?: Prisma.PositionInheritanceListRelationFilter
+  inheritedBy?: Prisma.PositionInheritanceListRelationFilter
 }, "id" | "name">
 
 export type PositionOrderByWithAggregationInput = {
@@ -255,6 +261,8 @@ export type PositionCreateInput = {
   users?: Prisma.UserCreateNestedManyWithoutPositionInput
   responsibleFunctions?: Prisma.TaskFunctionCreateNestedManyWithoutResponsiblePositionInput
   responsibleTasks?: Prisma.TaskCreateNestedManyWithoutResponsiblePositionInput
+  inheritances?: Prisma.PositionInheritanceCreateNestedManyWithoutPositionInput
+  inheritedBy?: Prisma.PositionInheritanceCreateNestedManyWithoutInheritedPositionInput
 }
 
 export type PositionUncheckedCreateInput = {
@@ -267,6 +275,8 @@ export type PositionUncheckedCreateInput = {
   users?: Prisma.UserUncheckedCreateNestedManyWithoutPositionInput
   responsibleFunctions?: Prisma.TaskFunctionUncheckedCreateNestedManyWithoutResponsiblePositionInput
   responsibleTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutResponsiblePositionInput
+  inheritances?: Prisma.PositionInheritanceUncheckedCreateNestedManyWithoutPositionInput
+  inheritedBy?: Prisma.PositionInheritanceUncheckedCreateNestedManyWithoutInheritedPositionInput
 }
 
 export type PositionUpdateInput = {
@@ -279,6 +289,8 @@ export type PositionUpdateInput = {
   users?: Prisma.UserUpdateManyWithoutPositionNestedInput
   responsibleFunctions?: Prisma.TaskFunctionUpdateManyWithoutResponsiblePositionNestedInput
   responsibleTasks?: Prisma.TaskUpdateManyWithoutResponsiblePositionNestedInput
+  inheritances?: Prisma.PositionInheritanceUpdateManyWithoutPositionNestedInput
+  inheritedBy?: Prisma.PositionInheritanceUpdateManyWithoutInheritedPositionNestedInput
 }
 
 export type PositionUncheckedUpdateInput = {
@@ -291,6 +303,8 @@ export type PositionUncheckedUpdateInput = {
   users?: Prisma.UserUncheckedUpdateManyWithoutPositionNestedInput
   responsibleFunctions?: Prisma.TaskFunctionUncheckedUpdateManyWithoutResponsiblePositionNestedInput
   responsibleTasks?: Prisma.TaskUncheckedUpdateManyWithoutResponsiblePositionNestedInput
+  inheritances?: Prisma.PositionInheritanceUncheckedUpdateManyWithoutPositionNestedInput
+  inheritedBy?: Prisma.PositionInheritanceUncheckedUpdateManyWithoutInheritedPositionNestedInput
 }
 
 export type PositionCreateManyInput = {
@@ -347,9 +361,42 @@ export type PositionMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
+export type PositionScalarRelationFilter = {
+  is?: Prisma.PositionWhereInput
+  isNot?: Prisma.PositionWhereInput
+}
+
 export type PositionNullableScalarRelationFilter = {
   is?: Prisma.PositionWhereInput | null
   isNot?: Prisma.PositionWhereInput | null
+}
+
+export type PositionCreateNestedOneWithoutInheritancesInput = {
+  create?: Prisma.XOR<Prisma.PositionCreateWithoutInheritancesInput, Prisma.PositionUncheckedCreateWithoutInheritancesInput>
+  connectOrCreate?: Prisma.PositionCreateOrConnectWithoutInheritancesInput
+  connect?: Prisma.PositionWhereUniqueInput
+}
+
+export type PositionCreateNestedOneWithoutInheritedByInput = {
+  create?: Prisma.XOR<Prisma.PositionCreateWithoutInheritedByInput, Prisma.PositionUncheckedCreateWithoutInheritedByInput>
+  connectOrCreate?: Prisma.PositionCreateOrConnectWithoutInheritedByInput
+  connect?: Prisma.PositionWhereUniqueInput
+}
+
+export type PositionUpdateOneRequiredWithoutInheritancesNestedInput = {
+  create?: Prisma.XOR<Prisma.PositionCreateWithoutInheritancesInput, Prisma.PositionUncheckedCreateWithoutInheritancesInput>
+  connectOrCreate?: Prisma.PositionCreateOrConnectWithoutInheritancesInput
+  upsert?: Prisma.PositionUpsertWithoutInheritancesInput
+  connect?: Prisma.PositionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PositionUpdateToOneWithWhereWithoutInheritancesInput, Prisma.PositionUpdateWithoutInheritancesInput>, Prisma.PositionUncheckedUpdateWithoutInheritancesInput>
+}
+
+export type PositionUpdateOneRequiredWithoutInheritedByNestedInput = {
+  create?: Prisma.XOR<Prisma.PositionCreateWithoutInheritedByInput, Prisma.PositionUncheckedCreateWithoutInheritedByInput>
+  connectOrCreate?: Prisma.PositionCreateOrConnectWithoutInheritedByInput
+  upsert?: Prisma.PositionUpsertWithoutInheritedByInput
+  connect?: Prisma.PositionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PositionUpdateToOneWithWhereWithoutInheritedByInput, Prisma.PositionUpdateWithoutInheritedByInput>, Prisma.PositionUncheckedUpdateWithoutInheritedByInput>
 }
 
 export type PositionCreateNestedOneWithoutUsersInput = {
@@ -400,6 +447,142 @@ export type PositionUpdateOneWithoutResponsibleTasksNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.PositionUpdateToOneWithWhereWithoutResponsibleTasksInput, Prisma.PositionUpdateWithoutResponsibleTasksInput>, Prisma.PositionUncheckedUpdateWithoutResponsibleTasksInput>
 }
 
+export type PositionCreateWithoutInheritancesInput = {
+  id?: string
+  name: string
+  description?: string | null
+  active?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  users?: Prisma.UserCreateNestedManyWithoutPositionInput
+  responsibleFunctions?: Prisma.TaskFunctionCreateNestedManyWithoutResponsiblePositionInput
+  responsibleTasks?: Prisma.TaskCreateNestedManyWithoutResponsiblePositionInput
+  inheritedBy?: Prisma.PositionInheritanceCreateNestedManyWithoutInheritedPositionInput
+}
+
+export type PositionUncheckedCreateWithoutInheritancesInput = {
+  id?: string
+  name: string
+  description?: string | null
+  active?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutPositionInput
+  responsibleFunctions?: Prisma.TaskFunctionUncheckedCreateNestedManyWithoutResponsiblePositionInput
+  responsibleTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutResponsiblePositionInput
+  inheritedBy?: Prisma.PositionInheritanceUncheckedCreateNestedManyWithoutInheritedPositionInput
+}
+
+export type PositionCreateOrConnectWithoutInheritancesInput = {
+  where: Prisma.PositionWhereUniqueInput
+  create: Prisma.XOR<Prisma.PositionCreateWithoutInheritancesInput, Prisma.PositionUncheckedCreateWithoutInheritancesInput>
+}
+
+export type PositionCreateWithoutInheritedByInput = {
+  id?: string
+  name: string
+  description?: string | null
+  active?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  users?: Prisma.UserCreateNestedManyWithoutPositionInput
+  responsibleFunctions?: Prisma.TaskFunctionCreateNestedManyWithoutResponsiblePositionInput
+  responsibleTasks?: Prisma.TaskCreateNestedManyWithoutResponsiblePositionInput
+  inheritances?: Prisma.PositionInheritanceCreateNestedManyWithoutPositionInput
+}
+
+export type PositionUncheckedCreateWithoutInheritedByInput = {
+  id?: string
+  name: string
+  description?: string | null
+  active?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutPositionInput
+  responsibleFunctions?: Prisma.TaskFunctionUncheckedCreateNestedManyWithoutResponsiblePositionInput
+  responsibleTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutResponsiblePositionInput
+  inheritances?: Prisma.PositionInheritanceUncheckedCreateNestedManyWithoutPositionInput
+}
+
+export type PositionCreateOrConnectWithoutInheritedByInput = {
+  where: Prisma.PositionWhereUniqueInput
+  create: Prisma.XOR<Prisma.PositionCreateWithoutInheritedByInput, Prisma.PositionUncheckedCreateWithoutInheritedByInput>
+}
+
+export type PositionUpsertWithoutInheritancesInput = {
+  update: Prisma.XOR<Prisma.PositionUpdateWithoutInheritancesInput, Prisma.PositionUncheckedUpdateWithoutInheritancesInput>
+  create: Prisma.XOR<Prisma.PositionCreateWithoutInheritancesInput, Prisma.PositionUncheckedCreateWithoutInheritancesInput>
+  where?: Prisma.PositionWhereInput
+}
+
+export type PositionUpdateToOneWithWhereWithoutInheritancesInput = {
+  where?: Prisma.PositionWhereInput
+  data: Prisma.XOR<Prisma.PositionUpdateWithoutInheritancesInput, Prisma.PositionUncheckedUpdateWithoutInheritancesInput>
+}
+
+export type PositionUpdateWithoutInheritancesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  users?: Prisma.UserUpdateManyWithoutPositionNestedInput
+  responsibleFunctions?: Prisma.TaskFunctionUpdateManyWithoutResponsiblePositionNestedInput
+  responsibleTasks?: Prisma.TaskUpdateManyWithoutResponsiblePositionNestedInput
+  inheritedBy?: Prisma.PositionInheritanceUpdateManyWithoutInheritedPositionNestedInput
+}
+
+export type PositionUncheckedUpdateWithoutInheritancesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  users?: Prisma.UserUncheckedUpdateManyWithoutPositionNestedInput
+  responsibleFunctions?: Prisma.TaskFunctionUncheckedUpdateManyWithoutResponsiblePositionNestedInput
+  responsibleTasks?: Prisma.TaskUncheckedUpdateManyWithoutResponsiblePositionNestedInput
+  inheritedBy?: Prisma.PositionInheritanceUncheckedUpdateManyWithoutInheritedPositionNestedInput
+}
+
+export type PositionUpsertWithoutInheritedByInput = {
+  update: Prisma.XOR<Prisma.PositionUpdateWithoutInheritedByInput, Prisma.PositionUncheckedUpdateWithoutInheritedByInput>
+  create: Prisma.XOR<Prisma.PositionCreateWithoutInheritedByInput, Prisma.PositionUncheckedCreateWithoutInheritedByInput>
+  where?: Prisma.PositionWhereInput
+}
+
+export type PositionUpdateToOneWithWhereWithoutInheritedByInput = {
+  where?: Prisma.PositionWhereInput
+  data: Prisma.XOR<Prisma.PositionUpdateWithoutInheritedByInput, Prisma.PositionUncheckedUpdateWithoutInheritedByInput>
+}
+
+export type PositionUpdateWithoutInheritedByInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  users?: Prisma.UserUpdateManyWithoutPositionNestedInput
+  responsibleFunctions?: Prisma.TaskFunctionUpdateManyWithoutResponsiblePositionNestedInput
+  responsibleTasks?: Prisma.TaskUpdateManyWithoutResponsiblePositionNestedInput
+  inheritances?: Prisma.PositionInheritanceUpdateManyWithoutPositionNestedInput
+}
+
+export type PositionUncheckedUpdateWithoutInheritedByInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  users?: Prisma.UserUncheckedUpdateManyWithoutPositionNestedInput
+  responsibleFunctions?: Prisma.TaskFunctionUncheckedUpdateManyWithoutResponsiblePositionNestedInput
+  responsibleTasks?: Prisma.TaskUncheckedUpdateManyWithoutResponsiblePositionNestedInput
+  inheritances?: Prisma.PositionInheritanceUncheckedUpdateManyWithoutPositionNestedInput
+}
+
 export type PositionCreateWithoutUsersInput = {
   id?: string
   name: string
@@ -409,6 +592,8 @@ export type PositionCreateWithoutUsersInput = {
   updatedAt?: Date | string
   responsibleFunctions?: Prisma.TaskFunctionCreateNestedManyWithoutResponsiblePositionInput
   responsibleTasks?: Prisma.TaskCreateNestedManyWithoutResponsiblePositionInput
+  inheritances?: Prisma.PositionInheritanceCreateNestedManyWithoutPositionInput
+  inheritedBy?: Prisma.PositionInheritanceCreateNestedManyWithoutInheritedPositionInput
 }
 
 export type PositionUncheckedCreateWithoutUsersInput = {
@@ -420,6 +605,8 @@ export type PositionUncheckedCreateWithoutUsersInput = {
   updatedAt?: Date | string
   responsibleFunctions?: Prisma.TaskFunctionUncheckedCreateNestedManyWithoutResponsiblePositionInput
   responsibleTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutResponsiblePositionInput
+  inheritances?: Prisma.PositionInheritanceUncheckedCreateNestedManyWithoutPositionInput
+  inheritedBy?: Prisma.PositionInheritanceUncheckedCreateNestedManyWithoutInheritedPositionInput
 }
 
 export type PositionCreateOrConnectWithoutUsersInput = {
@@ -447,6 +634,8 @@ export type PositionUpdateWithoutUsersInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   responsibleFunctions?: Prisma.TaskFunctionUpdateManyWithoutResponsiblePositionNestedInput
   responsibleTasks?: Prisma.TaskUpdateManyWithoutResponsiblePositionNestedInput
+  inheritances?: Prisma.PositionInheritanceUpdateManyWithoutPositionNestedInput
+  inheritedBy?: Prisma.PositionInheritanceUpdateManyWithoutInheritedPositionNestedInput
 }
 
 export type PositionUncheckedUpdateWithoutUsersInput = {
@@ -458,6 +647,8 @@ export type PositionUncheckedUpdateWithoutUsersInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   responsibleFunctions?: Prisma.TaskFunctionUncheckedUpdateManyWithoutResponsiblePositionNestedInput
   responsibleTasks?: Prisma.TaskUncheckedUpdateManyWithoutResponsiblePositionNestedInput
+  inheritances?: Prisma.PositionInheritanceUncheckedUpdateManyWithoutPositionNestedInput
+  inheritedBy?: Prisma.PositionInheritanceUncheckedUpdateManyWithoutInheritedPositionNestedInput
 }
 
 export type PositionCreateWithoutResponsibleFunctionsInput = {
@@ -469,6 +660,8 @@ export type PositionCreateWithoutResponsibleFunctionsInput = {
   updatedAt?: Date | string
   users?: Prisma.UserCreateNestedManyWithoutPositionInput
   responsibleTasks?: Prisma.TaskCreateNestedManyWithoutResponsiblePositionInput
+  inheritances?: Prisma.PositionInheritanceCreateNestedManyWithoutPositionInput
+  inheritedBy?: Prisma.PositionInheritanceCreateNestedManyWithoutInheritedPositionInput
 }
 
 export type PositionUncheckedCreateWithoutResponsibleFunctionsInput = {
@@ -480,6 +673,8 @@ export type PositionUncheckedCreateWithoutResponsibleFunctionsInput = {
   updatedAt?: Date | string
   users?: Prisma.UserUncheckedCreateNestedManyWithoutPositionInput
   responsibleTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutResponsiblePositionInput
+  inheritances?: Prisma.PositionInheritanceUncheckedCreateNestedManyWithoutPositionInput
+  inheritedBy?: Prisma.PositionInheritanceUncheckedCreateNestedManyWithoutInheritedPositionInput
 }
 
 export type PositionCreateOrConnectWithoutResponsibleFunctionsInput = {
@@ -507,6 +702,8 @@ export type PositionUpdateWithoutResponsibleFunctionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUpdateManyWithoutPositionNestedInput
   responsibleTasks?: Prisma.TaskUpdateManyWithoutResponsiblePositionNestedInput
+  inheritances?: Prisma.PositionInheritanceUpdateManyWithoutPositionNestedInput
+  inheritedBy?: Prisma.PositionInheritanceUpdateManyWithoutInheritedPositionNestedInput
 }
 
 export type PositionUncheckedUpdateWithoutResponsibleFunctionsInput = {
@@ -518,6 +715,8 @@ export type PositionUncheckedUpdateWithoutResponsibleFunctionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUncheckedUpdateManyWithoutPositionNestedInput
   responsibleTasks?: Prisma.TaskUncheckedUpdateManyWithoutResponsiblePositionNestedInput
+  inheritances?: Prisma.PositionInheritanceUncheckedUpdateManyWithoutPositionNestedInput
+  inheritedBy?: Prisma.PositionInheritanceUncheckedUpdateManyWithoutInheritedPositionNestedInput
 }
 
 export type PositionCreateWithoutResponsibleTasksInput = {
@@ -529,6 +728,8 @@ export type PositionCreateWithoutResponsibleTasksInput = {
   updatedAt?: Date | string
   users?: Prisma.UserCreateNestedManyWithoutPositionInput
   responsibleFunctions?: Prisma.TaskFunctionCreateNestedManyWithoutResponsiblePositionInput
+  inheritances?: Prisma.PositionInheritanceCreateNestedManyWithoutPositionInput
+  inheritedBy?: Prisma.PositionInheritanceCreateNestedManyWithoutInheritedPositionInput
 }
 
 export type PositionUncheckedCreateWithoutResponsibleTasksInput = {
@@ -540,6 +741,8 @@ export type PositionUncheckedCreateWithoutResponsibleTasksInput = {
   updatedAt?: Date | string
   users?: Prisma.UserUncheckedCreateNestedManyWithoutPositionInput
   responsibleFunctions?: Prisma.TaskFunctionUncheckedCreateNestedManyWithoutResponsiblePositionInput
+  inheritances?: Prisma.PositionInheritanceUncheckedCreateNestedManyWithoutPositionInput
+  inheritedBy?: Prisma.PositionInheritanceUncheckedCreateNestedManyWithoutInheritedPositionInput
 }
 
 export type PositionCreateOrConnectWithoutResponsibleTasksInput = {
@@ -567,6 +770,8 @@ export type PositionUpdateWithoutResponsibleTasksInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUpdateManyWithoutPositionNestedInput
   responsibleFunctions?: Prisma.TaskFunctionUpdateManyWithoutResponsiblePositionNestedInput
+  inheritances?: Prisma.PositionInheritanceUpdateManyWithoutPositionNestedInput
+  inheritedBy?: Prisma.PositionInheritanceUpdateManyWithoutInheritedPositionNestedInput
 }
 
 export type PositionUncheckedUpdateWithoutResponsibleTasksInput = {
@@ -578,6 +783,8 @@ export type PositionUncheckedUpdateWithoutResponsibleTasksInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   users?: Prisma.UserUncheckedUpdateManyWithoutPositionNestedInput
   responsibleFunctions?: Prisma.TaskFunctionUncheckedUpdateManyWithoutResponsiblePositionNestedInput
+  inheritances?: Prisma.PositionInheritanceUncheckedUpdateManyWithoutPositionNestedInput
+  inheritedBy?: Prisma.PositionInheritanceUncheckedUpdateManyWithoutInheritedPositionNestedInput
 }
 
 
@@ -589,12 +796,16 @@ export type PositionCountOutputType = {
   users: number
   responsibleFunctions: number
   responsibleTasks: number
+  inheritances: number
+  inheritedBy: number
 }
 
 export type PositionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   users?: boolean | PositionCountOutputTypeCountUsersArgs
   responsibleFunctions?: boolean | PositionCountOutputTypeCountResponsibleFunctionsArgs
   responsibleTasks?: boolean | PositionCountOutputTypeCountResponsibleTasksArgs
+  inheritances?: boolean | PositionCountOutputTypeCountInheritancesArgs
+  inheritedBy?: boolean | PositionCountOutputTypeCountInheritedByArgs
 }
 
 /**
@@ -628,6 +839,20 @@ export type PositionCountOutputTypeCountResponsibleTasksArgs<ExtArgs extends run
   where?: Prisma.TaskWhereInput
 }
 
+/**
+ * PositionCountOutputType without action
+ */
+export type PositionCountOutputTypeCountInheritancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PositionInheritanceWhereInput
+}
+
+/**
+ * PositionCountOutputType without action
+ */
+export type PositionCountOutputTypeCountInheritedByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PositionInheritanceWhereInput
+}
+
 
 export type PositionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -639,6 +864,8 @@ export type PositionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   users?: boolean | Prisma.Position$usersArgs<ExtArgs>
   responsibleFunctions?: boolean | Prisma.Position$responsibleFunctionsArgs<ExtArgs>
   responsibleTasks?: boolean | Prisma.Position$responsibleTasksArgs<ExtArgs>
+  inheritances?: boolean | Prisma.Position$inheritancesArgs<ExtArgs>
+  inheritedBy?: boolean | Prisma.Position$inheritedByArgs<ExtArgs>
   _count?: boolean | Prisma.PositionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["position"]>
 
@@ -674,6 +901,8 @@ export type PositionInclude<ExtArgs extends runtime.Types.Extensions.InternalArg
   users?: boolean | Prisma.Position$usersArgs<ExtArgs>
   responsibleFunctions?: boolean | Prisma.Position$responsibleFunctionsArgs<ExtArgs>
   responsibleTasks?: boolean | Prisma.Position$responsibleTasksArgs<ExtArgs>
+  inheritances?: boolean | Prisma.Position$inheritancesArgs<ExtArgs>
+  inheritedBy?: boolean | Prisma.Position$inheritedByArgs<ExtArgs>
   _count?: boolean | Prisma.PositionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PositionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -685,6 +914,8 @@ export type $PositionPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     users: Prisma.$UserPayload<ExtArgs>[]
     responsibleFunctions: Prisma.$TaskFunctionPayload<ExtArgs>[]
     responsibleTasks: Prisma.$TaskPayload<ExtArgs>[]
+    inheritances: Prisma.$PositionInheritancePayload<ExtArgs>[]
+    inheritedBy: Prisma.$PositionInheritancePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1090,6 +1321,8 @@ export interface Prisma__PositionClient<T, Null = never, ExtArgs extends runtime
   users<T extends Prisma.Position$usersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Position$usersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   responsibleFunctions<T extends Prisma.Position$responsibleFunctionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Position$responsibleFunctionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskFunctionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   responsibleTasks<T extends Prisma.Position$responsibleTasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Position$responsibleTasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  inheritances<T extends Prisma.Position$inheritancesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Position$inheritancesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PositionInheritancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  inheritedBy<T extends Prisma.Position$inheritedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Position$inheritedByArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PositionInheritancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1587,6 +1820,54 @@ export type Position$responsibleTasksArgs<ExtArgs extends runtime.Types.Extensio
   take?: number
   skip?: number
   distinct?: Prisma.TaskScalarFieldEnum | Prisma.TaskScalarFieldEnum[]
+}
+
+/**
+ * Position.inheritances
+ */
+export type Position$inheritancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PositionInheritance
+   */
+  select?: Prisma.PositionInheritanceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PositionInheritance
+   */
+  omit?: Prisma.PositionInheritanceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PositionInheritanceInclude<ExtArgs> | null
+  where?: Prisma.PositionInheritanceWhereInput
+  orderBy?: Prisma.PositionInheritanceOrderByWithRelationInput | Prisma.PositionInheritanceOrderByWithRelationInput[]
+  cursor?: Prisma.PositionInheritanceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PositionInheritanceScalarFieldEnum | Prisma.PositionInheritanceScalarFieldEnum[]
+}
+
+/**
+ * Position.inheritedBy
+ */
+export type Position$inheritedByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PositionInheritance
+   */
+  select?: Prisma.PositionInheritanceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PositionInheritance
+   */
+  omit?: Prisma.PositionInheritanceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PositionInheritanceInclude<ExtArgs> | null
+  where?: Prisma.PositionInheritanceWhereInput
+  orderBy?: Prisma.PositionInheritanceOrderByWithRelationInput | Prisma.PositionInheritanceOrderByWithRelationInput[]
+  cursor?: Prisma.PositionInheritanceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PositionInheritanceScalarFieldEnum | Prisma.PositionInheritanceScalarFieldEnum[]
 }
 
 /**

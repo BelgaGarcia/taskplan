@@ -21,7 +21,8 @@ export const PeriodicityType = {
   SPECIFIC_MONTH_DAY: 'SPECIFIC_MONTH_DAY',
   FIRST_BUSINESS_DAY: 'FIRST_BUSINESS_DAY',
   LAST_BUSINESS_DAY: 'LAST_BUSINESS_DAY',
-  CUSTOM_INTERVAL: 'CUSTOM_INTERVAL'
+  CUSTOM_INTERVAL: 'CUSTOM_INTERVAL',
+  MONTHLY_DAY_RANGE: 'MONTHLY_DAY_RANGE'
 } as const
 
 export type PeriodicityType = (typeof PeriodicityType)[keyof typeof PeriodicityType]
@@ -65,3 +66,11 @@ export const TaskOccurrenceResult = {
 } as const
 
 export type TaskOccurrenceResult = (typeof TaskOccurrenceResult)[keyof typeof TaskOccurrenceResult]
+
+
+export const AccessLevel = {
+  ADMIN: 'ADMIN',
+  OPERATOR: 'OPERATOR'
+} as const
+
+export type AccessLevel = (typeof AccessLevel)[keyof typeof AccessLevel]

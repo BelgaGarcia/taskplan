@@ -29,6 +29,8 @@ export type PeriodicityAvgAggregateOutputType = {
   interval: number | null
   daysOfWeek: number | null
   dayOfMonth: number | null
+  startDayOfMonth: number | null
+  endDayOfMonth: number | null
   month: number | null
 }
 
@@ -36,6 +38,8 @@ export type PeriodicitySumAggregateOutputType = {
   interval: number | null
   daysOfWeek: number[]
   dayOfMonth: number | null
+  startDayOfMonth: number | null
+  endDayOfMonth: number | null
   month: number | null
 }
 
@@ -45,6 +49,8 @@ export type PeriodicityMinAggregateOutputType = {
   type: $Enums.PeriodicityType | null
   interval: number | null
   dayOfMonth: number | null
+  startDayOfMonth: number | null
+  endDayOfMonth: number | null
   month: number | null
   nonexistentDayRule: $Enums.NonexistentDayRule | null
   active: boolean | null
@@ -58,6 +64,8 @@ export type PeriodicityMaxAggregateOutputType = {
   type: $Enums.PeriodicityType | null
   interval: number | null
   dayOfMonth: number | null
+  startDayOfMonth: number | null
+  endDayOfMonth: number | null
   month: number | null
   nonexistentDayRule: $Enums.NonexistentDayRule | null
   active: boolean | null
@@ -72,6 +80,8 @@ export type PeriodicityCountAggregateOutputType = {
   interval: number
   daysOfWeek: number
   dayOfMonth: number
+  startDayOfMonth: number
+  endDayOfMonth: number
   month: number
   nonexistentDayRule: number
   active: number
@@ -85,6 +95,8 @@ export type PeriodicityAvgAggregateInputType = {
   interval?: true
   daysOfWeek?: true
   dayOfMonth?: true
+  startDayOfMonth?: true
+  endDayOfMonth?: true
   month?: true
 }
 
@@ -92,6 +104,8 @@ export type PeriodicitySumAggregateInputType = {
   interval?: true
   daysOfWeek?: true
   dayOfMonth?: true
+  startDayOfMonth?: true
+  endDayOfMonth?: true
   month?: true
 }
 
@@ -101,6 +115,8 @@ export type PeriodicityMinAggregateInputType = {
   type?: true
   interval?: true
   dayOfMonth?: true
+  startDayOfMonth?: true
+  endDayOfMonth?: true
   month?: true
   nonexistentDayRule?: true
   active?: true
@@ -114,6 +130,8 @@ export type PeriodicityMaxAggregateInputType = {
   type?: true
   interval?: true
   dayOfMonth?: true
+  startDayOfMonth?: true
+  endDayOfMonth?: true
   month?: true
   nonexistentDayRule?: true
   active?: true
@@ -128,6 +146,8 @@ export type PeriodicityCountAggregateInputType = {
   interval?: true
   daysOfWeek?: true
   dayOfMonth?: true
+  startDayOfMonth?: true
+  endDayOfMonth?: true
   month?: true
   nonexistentDayRule?: true
   active?: true
@@ -229,6 +249,8 @@ export type PeriodicityGroupByOutputType = {
   interval: number
   daysOfWeek: number[]
   dayOfMonth: number | null
+  startDayOfMonth: number | null
+  endDayOfMonth: number | null
   month: number | null
   nonexistentDayRule: $Enums.NonexistentDayRule
   active: boolean
@@ -266,6 +288,8 @@ export type PeriodicityWhereInput = {
   interval?: Prisma.IntFilter<"Periodicity"> | number
   daysOfWeek?: Prisma.IntNullableListFilter<"Periodicity">
   dayOfMonth?: Prisma.IntNullableFilter<"Periodicity"> | number | null
+  startDayOfMonth?: Prisma.IntNullableFilter<"Periodicity"> | number | null
+  endDayOfMonth?: Prisma.IntNullableFilter<"Periodicity"> | number | null
   month?: Prisma.IntNullableFilter<"Periodicity"> | number | null
   nonexistentDayRule?: Prisma.EnumNonexistentDayRuleFilter<"Periodicity"> | $Enums.NonexistentDayRule
   active?: Prisma.BoolFilter<"Periodicity"> | boolean
@@ -281,6 +305,8 @@ export type PeriodicityOrderByWithRelationInput = {
   interval?: Prisma.SortOrder
   daysOfWeek?: Prisma.SortOrder
   dayOfMonth?: Prisma.SortOrderInput | Prisma.SortOrder
+  startDayOfMonth?: Prisma.SortOrderInput | Prisma.SortOrder
+  endDayOfMonth?: Prisma.SortOrderInput | Prisma.SortOrder
   month?: Prisma.SortOrderInput | Prisma.SortOrder
   nonexistentDayRule?: Prisma.SortOrder
   active?: Prisma.SortOrder
@@ -299,6 +325,8 @@ export type PeriodicityWhereUniqueInput = Prisma.AtLeast<{
   interval?: Prisma.IntFilter<"Periodicity"> | number
   daysOfWeek?: Prisma.IntNullableListFilter<"Periodicity">
   dayOfMonth?: Prisma.IntNullableFilter<"Periodicity"> | number | null
+  startDayOfMonth?: Prisma.IntNullableFilter<"Periodicity"> | number | null
+  endDayOfMonth?: Prisma.IntNullableFilter<"Periodicity"> | number | null
   month?: Prisma.IntNullableFilter<"Periodicity"> | number | null
   nonexistentDayRule?: Prisma.EnumNonexistentDayRuleFilter<"Periodicity"> | $Enums.NonexistentDayRule
   active?: Prisma.BoolFilter<"Periodicity"> | boolean
@@ -314,6 +342,8 @@ export type PeriodicityOrderByWithAggregationInput = {
   interval?: Prisma.SortOrder
   daysOfWeek?: Prisma.SortOrder
   dayOfMonth?: Prisma.SortOrderInput | Prisma.SortOrder
+  startDayOfMonth?: Prisma.SortOrderInput | Prisma.SortOrder
+  endDayOfMonth?: Prisma.SortOrderInput | Prisma.SortOrder
   month?: Prisma.SortOrderInput | Prisma.SortOrder
   nonexistentDayRule?: Prisma.SortOrder
   active?: Prisma.SortOrder
@@ -336,6 +366,8 @@ export type PeriodicityScalarWhereWithAggregatesInput = {
   interval?: Prisma.IntWithAggregatesFilter<"Periodicity"> | number
   daysOfWeek?: Prisma.IntNullableListFilter<"Periodicity">
   dayOfMonth?: Prisma.IntNullableWithAggregatesFilter<"Periodicity"> | number | null
+  startDayOfMonth?: Prisma.IntNullableWithAggregatesFilter<"Periodicity"> | number | null
+  endDayOfMonth?: Prisma.IntNullableWithAggregatesFilter<"Periodicity"> | number | null
   month?: Prisma.IntNullableWithAggregatesFilter<"Periodicity"> | number | null
   nonexistentDayRule?: Prisma.EnumNonexistentDayRuleWithAggregatesFilter<"Periodicity"> | $Enums.NonexistentDayRule
   active?: Prisma.BoolWithAggregatesFilter<"Periodicity"> | boolean
@@ -350,6 +382,8 @@ export type PeriodicityCreateInput = {
   interval?: number
   daysOfWeek?: Prisma.PeriodicityCreatedaysOfWeekInput | number[]
   dayOfMonth?: number | null
+  startDayOfMonth?: number | null
+  endDayOfMonth?: number | null
   month?: number | null
   nonexistentDayRule?: $Enums.NonexistentDayRule
   active?: boolean
@@ -365,6 +399,8 @@ export type PeriodicityUncheckedCreateInput = {
   interval?: number
   daysOfWeek?: Prisma.PeriodicityCreatedaysOfWeekInput | number[]
   dayOfMonth?: number | null
+  startDayOfMonth?: number | null
+  endDayOfMonth?: number | null
   month?: number | null
   nonexistentDayRule?: $Enums.NonexistentDayRule
   active?: boolean
@@ -380,6 +416,8 @@ export type PeriodicityUpdateInput = {
   interval?: Prisma.IntFieldUpdateOperationsInput | number
   daysOfWeek?: Prisma.PeriodicityUpdatedaysOfWeekInput | number[]
   dayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startDayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endDayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   month?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nonexistentDayRule?: Prisma.EnumNonexistentDayRuleFieldUpdateOperationsInput | $Enums.NonexistentDayRule
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -395,6 +433,8 @@ export type PeriodicityUncheckedUpdateInput = {
   interval?: Prisma.IntFieldUpdateOperationsInput | number
   daysOfWeek?: Prisma.PeriodicityUpdatedaysOfWeekInput | number[]
   dayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startDayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endDayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   month?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nonexistentDayRule?: Prisma.EnumNonexistentDayRuleFieldUpdateOperationsInput | $Enums.NonexistentDayRule
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -410,6 +450,8 @@ export type PeriodicityCreateManyInput = {
   interval?: number
   daysOfWeek?: Prisma.PeriodicityCreatedaysOfWeekInput | number[]
   dayOfMonth?: number | null
+  startDayOfMonth?: number | null
+  endDayOfMonth?: number | null
   month?: number | null
   nonexistentDayRule?: $Enums.NonexistentDayRule
   active?: boolean
@@ -424,6 +466,8 @@ export type PeriodicityUpdateManyMutationInput = {
   interval?: Prisma.IntFieldUpdateOperationsInput | number
   daysOfWeek?: Prisma.PeriodicityUpdatedaysOfWeekInput | number[]
   dayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startDayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endDayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   month?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nonexistentDayRule?: Prisma.EnumNonexistentDayRuleFieldUpdateOperationsInput | $Enums.NonexistentDayRule
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -438,6 +482,8 @@ export type PeriodicityUncheckedUpdateManyInput = {
   interval?: Prisma.IntFieldUpdateOperationsInput | number
   daysOfWeek?: Prisma.PeriodicityUpdatedaysOfWeekInput | number[]
   dayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startDayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endDayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   month?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nonexistentDayRule?: Prisma.EnumNonexistentDayRuleFieldUpdateOperationsInput | $Enums.NonexistentDayRule
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -460,6 +506,8 @@ export type PeriodicityCountOrderByAggregateInput = {
   interval?: Prisma.SortOrder
   daysOfWeek?: Prisma.SortOrder
   dayOfMonth?: Prisma.SortOrder
+  startDayOfMonth?: Prisma.SortOrder
+  endDayOfMonth?: Prisma.SortOrder
   month?: Prisma.SortOrder
   nonexistentDayRule?: Prisma.SortOrder
   active?: Prisma.SortOrder
@@ -471,6 +519,8 @@ export type PeriodicityAvgOrderByAggregateInput = {
   interval?: Prisma.SortOrder
   daysOfWeek?: Prisma.SortOrder
   dayOfMonth?: Prisma.SortOrder
+  startDayOfMonth?: Prisma.SortOrder
+  endDayOfMonth?: Prisma.SortOrder
   month?: Prisma.SortOrder
 }
 
@@ -480,6 +530,8 @@ export type PeriodicityMaxOrderByAggregateInput = {
   type?: Prisma.SortOrder
   interval?: Prisma.SortOrder
   dayOfMonth?: Prisma.SortOrder
+  startDayOfMonth?: Prisma.SortOrder
+  endDayOfMonth?: Prisma.SortOrder
   month?: Prisma.SortOrder
   nonexistentDayRule?: Prisma.SortOrder
   active?: Prisma.SortOrder
@@ -493,6 +545,8 @@ export type PeriodicityMinOrderByAggregateInput = {
   type?: Prisma.SortOrder
   interval?: Prisma.SortOrder
   dayOfMonth?: Prisma.SortOrder
+  startDayOfMonth?: Prisma.SortOrder
+  endDayOfMonth?: Prisma.SortOrder
   month?: Prisma.SortOrder
   nonexistentDayRule?: Prisma.SortOrder
   active?: Prisma.SortOrder
@@ -504,6 +558,8 @@ export type PeriodicitySumOrderByAggregateInput = {
   interval?: Prisma.SortOrder
   daysOfWeek?: Prisma.SortOrder
   dayOfMonth?: Prisma.SortOrder
+  startDayOfMonth?: Prisma.SortOrder
+  endDayOfMonth?: Prisma.SortOrder
   month?: Prisma.SortOrder
 }
 
@@ -566,6 +622,8 @@ export type PeriodicityCreateWithoutTasksInput = {
   interval?: number
   daysOfWeek?: Prisma.PeriodicityCreatedaysOfWeekInput | number[]
   dayOfMonth?: number | null
+  startDayOfMonth?: number | null
+  endDayOfMonth?: number | null
   month?: number | null
   nonexistentDayRule?: $Enums.NonexistentDayRule
   active?: boolean
@@ -580,6 +638,8 @@ export type PeriodicityUncheckedCreateWithoutTasksInput = {
   interval?: number
   daysOfWeek?: Prisma.PeriodicityCreatedaysOfWeekInput | number[]
   dayOfMonth?: number | null
+  startDayOfMonth?: number | null
+  endDayOfMonth?: number | null
   month?: number | null
   nonexistentDayRule?: $Enums.NonexistentDayRule
   active?: boolean
@@ -610,6 +670,8 @@ export type PeriodicityUpdateWithoutTasksInput = {
   interval?: Prisma.IntFieldUpdateOperationsInput | number
   daysOfWeek?: Prisma.PeriodicityUpdatedaysOfWeekInput | number[]
   dayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startDayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endDayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   month?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nonexistentDayRule?: Prisma.EnumNonexistentDayRuleFieldUpdateOperationsInput | $Enums.NonexistentDayRule
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -624,6 +686,8 @@ export type PeriodicityUncheckedUpdateWithoutTasksInput = {
   interval?: Prisma.IntFieldUpdateOperationsInput | number
   daysOfWeek?: Prisma.PeriodicityUpdatedaysOfWeekInput | number[]
   dayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startDayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endDayOfMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   month?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nonexistentDayRule?: Prisma.EnumNonexistentDayRuleFieldUpdateOperationsInput | $Enums.NonexistentDayRule
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -669,6 +733,8 @@ export type PeriodicitySelect<ExtArgs extends runtime.Types.Extensions.InternalA
   interval?: boolean
   daysOfWeek?: boolean
   dayOfMonth?: boolean
+  startDayOfMonth?: boolean
+  endDayOfMonth?: boolean
   month?: boolean
   nonexistentDayRule?: boolean
   active?: boolean
@@ -685,6 +751,8 @@ export type PeriodicitySelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   interval?: boolean
   daysOfWeek?: boolean
   dayOfMonth?: boolean
+  startDayOfMonth?: boolean
+  endDayOfMonth?: boolean
   month?: boolean
   nonexistentDayRule?: boolean
   active?: boolean
@@ -699,6 +767,8 @@ export type PeriodicitySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   interval?: boolean
   daysOfWeek?: boolean
   dayOfMonth?: boolean
+  startDayOfMonth?: boolean
+  endDayOfMonth?: boolean
   month?: boolean
   nonexistentDayRule?: boolean
   active?: boolean
@@ -713,6 +783,8 @@ export type PeriodicitySelectScalar = {
   interval?: boolean
   daysOfWeek?: boolean
   dayOfMonth?: boolean
+  startDayOfMonth?: boolean
+  endDayOfMonth?: boolean
   month?: boolean
   nonexistentDayRule?: boolean
   active?: boolean
@@ -720,7 +792,7 @@ export type PeriodicitySelectScalar = {
   updatedAt?: boolean
 }
 
-export type PeriodicityOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "type" | "interval" | "daysOfWeek" | "dayOfMonth" | "month" | "nonexistentDayRule" | "active" | "createdAt" | "updatedAt", ExtArgs["result"]["periodicity"]>
+export type PeriodicityOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "type" | "interval" | "daysOfWeek" | "dayOfMonth" | "startDayOfMonth" | "endDayOfMonth" | "month" | "nonexistentDayRule" | "active" | "createdAt" | "updatedAt", ExtArgs["result"]["periodicity"]>
 export type PeriodicityInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tasks?: boolean | Prisma.Periodicity$tasksArgs<ExtArgs>
   _count?: boolean | Prisma.PeriodicityCountOutputTypeDefaultArgs<ExtArgs>
@@ -740,6 +812,8 @@ export type $PeriodicityPayload<ExtArgs extends runtime.Types.Extensions.Interna
     interval: number
     daysOfWeek: number[]
     dayOfMonth: number | null
+    startDayOfMonth: number | null
+    endDayOfMonth: number | null
     month: number | null
     nonexistentDayRule: $Enums.NonexistentDayRule
     active: boolean
@@ -1175,6 +1249,8 @@ export interface PeriodicityFieldRefs {
   readonly interval: Prisma.FieldRef<"Periodicity", 'Int'>
   readonly daysOfWeek: Prisma.FieldRef<"Periodicity", 'Int[]'>
   readonly dayOfMonth: Prisma.FieldRef<"Periodicity", 'Int'>
+  readonly startDayOfMonth: Prisma.FieldRef<"Periodicity", 'Int'>
+  readonly endDayOfMonth: Prisma.FieldRef<"Periodicity", 'Int'>
   readonly month: Prisma.FieldRef<"Periodicity", 'Int'>
   readonly nonexistentDayRule: Prisma.FieldRef<"Periodicity", 'NonexistentDayRule'>
   readonly active: Prisma.FieldRef<"Periodicity", 'Boolean'>

@@ -52,12 +52,15 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   Role: 'Role',
   Position: 'Position',
+  PositionInheritance: 'PositionInheritance',
   User: 'User',
   TaskFunction: 'TaskFunction',
   Periodicity: 'Periodicity',
   Holiday: 'Holiday',
   Task: 'Task',
-  TaskOccurrence: 'TaskOccurrence'
+  TaskOccurrenceExclusion: 'TaskOccurrenceExclusion',
+  TaskOccurrence: 'TaskOccurrence',
+  AuditLog: 'AuditLog'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -80,6 +83,7 @@ export const RoleScalarFieldEnum = {
   id: 'id',
   name: 'name',
   description: 'description',
+  accessLevel: 'accessLevel',
   active: 'active',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -98,6 +102,16 @@ export const PositionScalarFieldEnum = {
 } as const
 
 export type PositionScalarFieldEnum = (typeof PositionScalarFieldEnum)[keyof typeof PositionScalarFieldEnum]
+
+
+export const PositionInheritanceScalarFieldEnum = {
+  id: 'id',
+  positionId: 'positionId',
+  inheritedPositionId: 'inheritedPositionId',
+  createdAt: 'createdAt'
+} as const
+
+export type PositionInheritanceScalarFieldEnum = (typeof PositionInheritanceScalarFieldEnum)[keyof typeof PositionInheritanceScalarFieldEnum]
 
 
 export const UserScalarFieldEnum = {
@@ -137,6 +151,8 @@ export const PeriodicityScalarFieldEnum = {
   interval: 'interval',
   daysOfWeek: 'daysOfWeek',
   dayOfMonth: 'dayOfMonth',
+  startDayOfMonth: 'startDayOfMonth',
+  endDayOfMonth: 'endDayOfMonth',
   month: 'month',
   nonexistentDayRule: 'nonexistentDayRule',
   active: 'active',
@@ -185,10 +201,22 @@ export const TaskScalarFieldEnum = {
 export type TaskScalarFieldEnum = (typeof TaskScalarFieldEnum)[keyof typeof TaskScalarFieldEnum]
 
 
+export const TaskOccurrenceExclusionScalarFieldEnum = {
+  id: 'id',
+  taskId: 'taskId',
+  originalDate: 'originalDate',
+  createdByUserId: 'createdByUserId',
+  createdAt: 'createdAt'
+} as const
+
+export type TaskOccurrenceExclusionScalarFieldEnum = (typeof TaskOccurrenceExclusionScalarFieldEnum)[keyof typeof TaskOccurrenceExclusionScalarFieldEnum]
+
+
 export const TaskOccurrenceScalarFieldEnum = {
   id: 'id',
   taskId: 'taskId',
   responsibleUserId: 'responsibleUserId',
+  executedByUserId: 'executedByUserId',
   originalDate: 'originalDate',
   scheduledDate: 'scheduledDate',
   scheduledTime: 'scheduledTime',
@@ -205,12 +233,32 @@ export const TaskOccurrenceScalarFieldEnum = {
 export type TaskOccurrenceScalarFieldEnum = (typeof TaskOccurrenceScalarFieldEnum)[keyof typeof TaskOccurrenceScalarFieldEnum]
 
 
+export const AuditLogScalarFieldEnum = {
+  id: 'id',
+  actorUserId: 'actorUserId',
+  action: 'action',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  metadata: 'metadata',
+  createdAt: 'createdAt'
+} as const
+
+export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -227,4 +275,13 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

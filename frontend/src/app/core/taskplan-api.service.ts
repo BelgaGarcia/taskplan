@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { RuntimeConfigService } from './runtime-config.service';
-import type { CalendarResponse, DashboardSummary, FilterOptions, Occurrence, OccurrenceResult, PaginatedResponse } from './models';
+import type { CalendarResponse, DashboardSummary, FilterOptions, Occurrence, OccurrenceResult, PaginatedResponse, PositionHierarchy } from './models';
 
 export type QueryValue = string | number | boolean | null | undefined;
 export type Query = Record<string, QueryValue>;
@@ -17,6 +17,7 @@ export class TaskPlanApiService {
   }
 
   get<T>(endpoint: string, id: string): Observable<T> { return this.http.get<T>(this.url(`${endpoint}/${id}`)); }
+  fetch<T>(endpoint: string): Observable<T> { return this.http.get<T>(this.url(endpoint)); }
   create<T>(endpoint: string, body: object): Observable<T> { return this.http.post<T>(this.url(endpoint), body); }
   update<T>(endpoint: string, id: string, body: object): Observable<T> { return this.http.patch<T>(this.url(`${endpoint}/${id}`), body); }
   inactivate<T>(endpoint: string, id: string): Observable<T> { return this.http.delete<T>(this.url(`${endpoint}/${id}`)); }
@@ -28,6 +29,9 @@ export class TaskPlanApiService {
   completeOccurrence(id: string, body: { result: OccurrenceResult; actualDurationMinutes?: number; notes?: string }): Observable<Occurrence> { return this.http.patch<Occurrence>(this.url(`task-occurrences/${id}/complete`), body); }
   rescheduleOccurrence(id: string, body: { scheduledDate: string; scheduledTime?: string }): Observable<Occurrence> { return this.http.patch<Occurrence>(this.url(`task-occurrences/${id}/reschedule`), body); }
   generateAgenda(body: { from: string; to: string }): Observable<object> { return this.http.post(this.url('task-occurrences/generate'), body); }
+  deleteOccurrence(id: string, scope: 'current' | 'future'): Observable<{ id: string; scope: string; removedCount: number }> { return this.http.delete<{ id: string; scope: string; removedCount: number }>(this.url(`task-occurrences/${id}`), { params: { scope } }); }
+  positionHierarchy(): Observable<PositionHierarchy> { return this.fetch<PositionHierarchy>('positions/hierarchy'); }
+  updatePositionHierarchy(inheritances: Array<{ positionId: string; inheritedPositionId: string }>): Observable<PositionHierarchy> { return this.http.patch<PositionHierarchy>(this.url('positions/hierarchy'), { inheritances }); }
 
   private url(path: string): string { return `${this.config.apiUrl}/${path}`; }
   private params(query: Query): HttpParams {

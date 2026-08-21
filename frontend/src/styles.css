@@ -44,6 +44,14 @@ main { min-width: 0; }
 .topbar-profile { display: flex; align-items: center; gap: 8px; padding-left: 12px; border-left: 1px solid var(--line); }
 .topbar-profile small { display: block; color: var(--muted); font-size: 10px; }
 .topbar-profile > .tp-icon { width: 14px; height: 14px; color: var(--muted); }
+.topbar-popover-anchor { position: relative; }
+.topbar-profile { border: 0; background: transparent; text-align: left; }
+.topbar-popover { position: absolute; z-index: 70; top: calc(100% + 8px); right: 0; display: grid; min-width: 260px; max-width: min(360px, calc(100vw - 28px)); gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 9px; background: #fff; box-shadow: 0 16px 35px #12203d2b; }
+.topbar-popover input { min-height: 36px; width: 100%; padding: 7px 9px; border: 1px solid #d8dee8; border-radius: 6px; }
+.topbar-popover button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 36px; padding: 7px 9px; border: 0; border-radius: 6px; color: var(--ink); background: transparent; text-align: left; font-size: 13px; }
+.topbar-popover button:hover { background: #eef2f8; }
+.topbar-popover p { margin: 2px; color: var(--muted); font-size: 12px; }.topbar-popover p b, .topbar-popover p small { display: block; }.topbar-popover .empty-state { padding: 12px; }
+.weekday-picker { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }.weekday-picker label { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; }.weekday-picker input { width: 15px; height: 15px; }
 .mobile-menu { display: none; }
 .page-content { max-width: 1440px; margin: 0 auto; padding: clamp(20px, 3vw, 34px); }
 .page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 24px; }

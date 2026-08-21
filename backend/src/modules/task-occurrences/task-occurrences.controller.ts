@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -30,6 +31,7 @@ import { RescheduleOccurrenceDto } from './dto/reschedule-occurrence.dto';
 import { OccurrenceGeneratorService } from './occurrence-generator.service';
 import { TaskOccurrencesService } from './task-occurrences.service';
 import { CalendarQueryDto } from './dto/calendar-query.dto';
+import { DeleteOccurrenceDto } from './dto/delete-occurrence.dto';
 
 @ApiTags('Ocorrências de tarefas')
 @ApiBearerAuth()
@@ -126,5 +128,18 @@ export class TaskOccurrencesController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.service.reschedule(id, dto, request.user!);
+  }
+
+  @Delete(':id')
+  @Roles('ADMIN')
+  @ApiOperation({
+    summary: 'Excluir fisicamente uma ocorrência pelo calendário',
+  })
+  deleteOccurrence(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Query() dto: DeleteOccurrenceDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.deleteForAdmin(id, dto.scope, request.user!);
   }
 }

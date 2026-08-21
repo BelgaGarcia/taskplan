@@ -398,12 +398,15 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   Role: 'Role',
   Position: 'Position',
+  PositionInheritance: 'PositionInheritance',
   User: 'User',
   TaskFunction: 'TaskFunction',
   Periodicity: 'Periodicity',
   Holiday: 'Holiday',
   Task: 'Task',
-  TaskOccurrence: 'TaskOccurrence'
+  TaskOccurrenceExclusion: 'TaskOccurrenceExclusion',
+  TaskOccurrence: 'TaskOccurrence',
+  AuditLog: 'AuditLog'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -419,7 +422,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "role" | "position" | "user" | "taskFunction" | "periodicity" | "holiday" | "task" | "taskOccurrence"
+    modelProps: "role" | "position" | "positionInheritance" | "user" | "taskFunction" | "periodicity" | "holiday" | "task" | "taskOccurrenceExclusion" | "taskOccurrence" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -568,6 +571,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.PositionCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.PositionCountAggregateOutputType> | number
+        }
+      }
+    }
+    PositionInheritance: {
+      payload: Prisma.$PositionInheritancePayload<ExtArgs>
+      fields: Prisma.PositionInheritanceFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PositionInheritanceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PositionInheritancePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PositionInheritanceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PositionInheritancePayload>
+        }
+        findFirst: {
+          args: Prisma.PositionInheritanceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PositionInheritancePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PositionInheritanceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PositionInheritancePayload>
+        }
+        findMany: {
+          args: Prisma.PositionInheritanceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PositionInheritancePayload>[]
+        }
+        create: {
+          args: Prisma.PositionInheritanceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PositionInheritancePayload>
+        }
+        createMany: {
+          args: Prisma.PositionInheritanceCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PositionInheritanceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PositionInheritancePayload>[]
+        }
+        delete: {
+          args: Prisma.PositionInheritanceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PositionInheritancePayload>
+        }
+        update: {
+          args: Prisma.PositionInheritanceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PositionInheritancePayload>
+        }
+        deleteMany: {
+          args: Prisma.PositionInheritanceDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PositionInheritanceUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PositionInheritanceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PositionInheritancePayload>[]
+        }
+        upsert: {
+          args: Prisma.PositionInheritanceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PositionInheritancePayload>
+        }
+        aggregate: {
+          args: Prisma.PositionInheritanceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePositionInheritance>
+        }
+        groupBy: {
+          args: Prisma.PositionInheritanceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PositionInheritanceGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PositionInheritanceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PositionInheritanceCountAggregateOutputType> | number
         }
       }
     }
@@ -941,6 +1018,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    TaskOccurrenceExclusion: {
+      payload: Prisma.$TaskOccurrenceExclusionPayload<ExtArgs>
+      fields: Prisma.TaskOccurrenceExclusionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TaskOccurrenceExclusionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskOccurrenceExclusionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TaskOccurrenceExclusionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskOccurrenceExclusionPayload>
+        }
+        findFirst: {
+          args: Prisma.TaskOccurrenceExclusionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskOccurrenceExclusionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TaskOccurrenceExclusionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskOccurrenceExclusionPayload>
+        }
+        findMany: {
+          args: Prisma.TaskOccurrenceExclusionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskOccurrenceExclusionPayload>[]
+        }
+        create: {
+          args: Prisma.TaskOccurrenceExclusionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskOccurrenceExclusionPayload>
+        }
+        createMany: {
+          args: Prisma.TaskOccurrenceExclusionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TaskOccurrenceExclusionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskOccurrenceExclusionPayload>[]
+        }
+        delete: {
+          args: Prisma.TaskOccurrenceExclusionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskOccurrenceExclusionPayload>
+        }
+        update: {
+          args: Prisma.TaskOccurrenceExclusionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskOccurrenceExclusionPayload>
+        }
+        deleteMany: {
+          args: Prisma.TaskOccurrenceExclusionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TaskOccurrenceExclusionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TaskOccurrenceExclusionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskOccurrenceExclusionPayload>[]
+        }
+        upsert: {
+          args: Prisma.TaskOccurrenceExclusionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskOccurrenceExclusionPayload>
+        }
+        aggregate: {
+          args: Prisma.TaskOccurrenceExclusionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTaskOccurrenceExclusion>
+        }
+        groupBy: {
+          args: Prisma.TaskOccurrenceExclusionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TaskOccurrenceExclusionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TaskOccurrenceExclusionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TaskOccurrenceExclusionCountAggregateOutputType> | number
+        }
+      }
+    }
     TaskOccurrence: {
       payload: Prisma.$TaskOccurrencePayload<ExtArgs>
       fields: Prisma.TaskOccurrenceFieldRefs
@@ -1015,6 +1166,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AuditLog: {
+      payload: Prisma.$AuditLogPayload<ExtArgs>
+      fields: Prisma.AuditLogFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AuditLogFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AuditLogFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>
+        }
+        findFirst: {
+          args: Prisma.AuditLogFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AuditLogFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>
+        }
+        findMany: {
+          args: Prisma.AuditLogFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>[]
+        }
+        create: {
+          args: Prisma.AuditLogCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>
+        }
+        createMany: {
+          args: Prisma.AuditLogCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AuditLogCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>[]
+        }
+        delete: {
+          args: Prisma.AuditLogDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>
+        }
+        update: {
+          args: Prisma.AuditLogUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>
+        }
+        deleteMany: {
+          args: Prisma.AuditLogDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AuditLogUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AuditLogUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>[]
+        }
+        upsert: {
+          args: Prisma.AuditLogUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>
+        }
+        aggregate: {
+          args: Prisma.AuditLogAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAuditLog>
+        }
+        groupBy: {
+          args: Prisma.AuditLogGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AuditLogGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AuditLogCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AuditLogCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1058,6 +1283,7 @@ export const RoleScalarFieldEnum = {
   id: 'id',
   name: 'name',
   description: 'description',
+  accessLevel: 'accessLevel',
   active: 'active',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -1076,6 +1302,16 @@ export const PositionScalarFieldEnum = {
 } as const
 
 export type PositionScalarFieldEnum = (typeof PositionScalarFieldEnum)[keyof typeof PositionScalarFieldEnum]
+
+
+export const PositionInheritanceScalarFieldEnum = {
+  id: 'id',
+  positionId: 'positionId',
+  inheritedPositionId: 'inheritedPositionId',
+  createdAt: 'createdAt'
+} as const
+
+export type PositionInheritanceScalarFieldEnum = (typeof PositionInheritanceScalarFieldEnum)[keyof typeof PositionInheritanceScalarFieldEnum]
 
 
 export const UserScalarFieldEnum = {
@@ -1115,6 +1351,8 @@ export const PeriodicityScalarFieldEnum = {
   interval: 'interval',
   daysOfWeek: 'daysOfWeek',
   dayOfMonth: 'dayOfMonth',
+  startDayOfMonth: 'startDayOfMonth',
+  endDayOfMonth: 'endDayOfMonth',
   month: 'month',
   nonexistentDayRule: 'nonexistentDayRule',
   active: 'active',
@@ -1163,10 +1401,22 @@ export const TaskScalarFieldEnum = {
 export type TaskScalarFieldEnum = (typeof TaskScalarFieldEnum)[keyof typeof TaskScalarFieldEnum]
 
 
+export const TaskOccurrenceExclusionScalarFieldEnum = {
+  id: 'id',
+  taskId: 'taskId',
+  originalDate: 'originalDate',
+  createdByUserId: 'createdByUserId',
+  createdAt: 'createdAt'
+} as const
+
+export type TaskOccurrenceExclusionScalarFieldEnum = (typeof TaskOccurrenceExclusionScalarFieldEnum)[keyof typeof TaskOccurrenceExclusionScalarFieldEnum]
+
+
 export const TaskOccurrenceScalarFieldEnum = {
   id: 'id',
   taskId: 'taskId',
   responsibleUserId: 'responsibleUserId',
+  executedByUserId: 'executedByUserId',
   originalDate: 'originalDate',
   scheduledDate: 'scheduledDate',
   scheduledTime: 'scheduledTime',
@@ -1183,12 +1433,32 @@ export const TaskOccurrenceScalarFieldEnum = {
 export type TaskOccurrenceScalarFieldEnum = (typeof TaskOccurrenceScalarFieldEnum)[keyof typeof TaskOccurrenceScalarFieldEnum]
 
 
+export const AuditLogScalarFieldEnum = {
+  id: 'id',
+  actorUserId: 'actorUserId',
+  action: 'action',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  metadata: 'metadata',
+  createdAt: 'createdAt'
+} as const
+
+export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -1205,6 +1475,15 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 
@@ -1224,6 +1503,20 @@ export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 
  * Reference to a field of type 'String[]'
  */
 export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String[]'>
+    
+
+
+/**
+ * Reference to a field of type 'AccessLevel'
+ */
+export type EnumAccessLevelFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AccessLevel'>
+    
+
+
+/**
+ * Reference to a field of type 'AccessLevel[]'
+ */
+export type ListEnumAccessLevelFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AccessLevel[]'>
     
 
 
@@ -1329,6 +1622,20 @@ export type EnumTaskOccurrenceResultFieldRefInput<$PrismaModel> = FieldRefInputT
  * Reference to a field of type 'TaskOccurrenceResult[]'
  */
 export type ListEnumTaskOccurrenceResultFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskOccurrenceResult[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -1498,12 +1805,15 @@ export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaC
 export type GlobalOmitConfig = {
   role?: Prisma.RoleOmit
   position?: Prisma.PositionOmit
+  positionInheritance?: Prisma.PositionInheritanceOmit
   user?: Prisma.UserOmit
   taskFunction?: Prisma.TaskFunctionOmit
   periodicity?: Prisma.PeriodicityOmit
   holiday?: Prisma.HolidayOmit
   task?: Prisma.TaskOmit
+  taskOccurrenceExclusion?: Prisma.TaskOccurrenceExclusionOmit
   taskOccurrence?: Prisma.TaskOccurrenceOmit
+  auditLog?: Prisma.AuditLogOmit
 }
 
 /* Types for Logging */

@@ -27,6 +27,7 @@ export type RoleMinAggregateOutputType = {
   id: string | null
   name: string | null
   description: string | null
+  accessLevel: $Enums.AccessLevel | null
   active: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -36,6 +37,7 @@ export type RoleMaxAggregateOutputType = {
   id: string | null
   name: string | null
   description: string | null
+  accessLevel: $Enums.AccessLevel | null
   active: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -45,6 +47,7 @@ export type RoleCountAggregateOutputType = {
   id: number
   name: number
   description: number
+  accessLevel: number
   active: number
   createdAt: number
   updatedAt: number
@@ -56,6 +59,7 @@ export type RoleMinAggregateInputType = {
   id?: true
   name?: true
   description?: true
+  accessLevel?: true
   active?: true
   createdAt?: true
   updatedAt?: true
@@ -65,6 +69,7 @@ export type RoleMaxAggregateInputType = {
   id?: true
   name?: true
   description?: true
+  accessLevel?: true
   active?: true
   createdAt?: true
   updatedAt?: true
@@ -74,6 +79,7 @@ export type RoleCountAggregateInputType = {
   id?: true
   name?: true
   description?: true
+  accessLevel?: true
   active?: true
   createdAt?: true
   updatedAt?: true
@@ -156,6 +162,7 @@ export type RoleGroupByOutputType = {
   id: string
   name: string
   description: string | null
+  accessLevel: $Enums.AccessLevel
   active: boolean
   createdAt: Date
   updatedAt: Date
@@ -186,6 +193,7 @@ export type RoleWhereInput = {
   id?: Prisma.UuidFilter<"Role"> | string
   name?: Prisma.StringFilter<"Role"> | string
   description?: Prisma.StringNullableFilter<"Role"> | string | null
+  accessLevel?: Prisma.EnumAccessLevelFilter<"Role"> | $Enums.AccessLevel
   active?: Prisma.BoolFilter<"Role"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Role"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Role"> | Date | string
@@ -196,6 +204,7 @@ export type RoleOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
+  accessLevel?: Prisma.SortOrder
   active?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -209,6 +218,7 @@ export type RoleWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.RoleWhereInput[]
   NOT?: Prisma.RoleWhereInput | Prisma.RoleWhereInput[]
   description?: Prisma.StringNullableFilter<"Role"> | string | null
+  accessLevel?: Prisma.EnumAccessLevelFilter<"Role"> | $Enums.AccessLevel
   active?: Prisma.BoolFilter<"Role"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Role"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Role"> | Date | string
@@ -219,6 +229,7 @@ export type RoleOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
+  accessLevel?: Prisma.SortOrder
   active?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -234,6 +245,7 @@ export type RoleScalarWhereWithAggregatesInput = {
   id?: Prisma.UuidWithAggregatesFilter<"Role"> | string
   name?: Prisma.StringWithAggregatesFilter<"Role"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"Role"> | string | null
+  accessLevel?: Prisma.EnumAccessLevelWithAggregatesFilter<"Role"> | $Enums.AccessLevel
   active?: Prisma.BoolWithAggregatesFilter<"Role"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Role"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Role"> | Date | string
@@ -243,6 +255,7 @@ export type RoleCreateInput = {
   id?: string
   name: string
   description?: string | null
+  accessLevel?: $Enums.AccessLevel
   active?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -253,6 +266,7 @@ export type RoleUncheckedCreateInput = {
   id?: string
   name: string
   description?: string | null
+  accessLevel?: $Enums.AccessLevel
   active?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -263,6 +277,7 @@ export type RoleUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  accessLevel?: Prisma.EnumAccessLevelFieldUpdateOperationsInput | $Enums.AccessLevel
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -273,6 +288,7 @@ export type RoleUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  accessLevel?: Prisma.EnumAccessLevelFieldUpdateOperationsInput | $Enums.AccessLevel
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -283,6 +299,7 @@ export type RoleCreateManyInput = {
   id?: string
   name: string
   description?: string | null
+  accessLevel?: $Enums.AccessLevel
   active?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -292,6 +309,7 @@ export type RoleUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  accessLevel?: Prisma.EnumAccessLevelFieldUpdateOperationsInput | $Enums.AccessLevel
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -301,6 +319,7 @@ export type RoleUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  accessLevel?: Prisma.EnumAccessLevelFieldUpdateOperationsInput | $Enums.AccessLevel
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -310,6 +329,7 @@ export type RoleCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  accessLevel?: Prisma.SortOrder
   active?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -319,6 +339,7 @@ export type RoleMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  accessLevel?: Prisma.SortOrder
   active?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -328,6 +349,7 @@ export type RoleMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  accessLevel?: Prisma.SortOrder
   active?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -344,6 +366,10 @@ export type StringFieldUpdateOperationsInput = {
 
 export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
+}
+
+export type EnumAccessLevelFieldUpdateOperationsInput = {
+  set?: $Enums.AccessLevel
 }
 
 export type BoolFieldUpdateOperationsInput = {
@@ -372,6 +398,7 @@ export type RoleCreateWithoutUsersInput = {
   id?: string
   name: string
   description?: string | null
+  accessLevel?: $Enums.AccessLevel
   active?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -381,6 +408,7 @@ export type RoleUncheckedCreateWithoutUsersInput = {
   id?: string
   name: string
   description?: string | null
+  accessLevel?: $Enums.AccessLevel
   active?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -406,6 +434,7 @@ export type RoleUpdateWithoutUsersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  accessLevel?: Prisma.EnumAccessLevelFieldUpdateOperationsInput | $Enums.AccessLevel
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -415,6 +444,7 @@ export type RoleUncheckedUpdateWithoutUsersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  accessLevel?: Prisma.EnumAccessLevelFieldUpdateOperationsInput | $Enums.AccessLevel
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -455,6 +485,7 @@ export type RoleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   id?: boolean
   name?: boolean
   description?: boolean
+  accessLevel?: boolean
   active?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -466,6 +497,7 @@ export type RoleSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   id?: boolean
   name?: boolean
   description?: boolean
+  accessLevel?: boolean
   active?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -475,6 +507,7 @@ export type RoleSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   id?: boolean
   name?: boolean
   description?: boolean
+  accessLevel?: boolean
   active?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -484,12 +517,13 @@ export type RoleSelectScalar = {
   id?: boolean
   name?: boolean
   description?: boolean
+  accessLevel?: boolean
   active?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type RoleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "active" | "createdAt" | "updatedAt", ExtArgs["result"]["role"]>
+export type RoleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "accessLevel" | "active" | "createdAt" | "updatedAt", ExtArgs["result"]["role"]>
 export type RoleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   users?: boolean | Prisma.Role$usersArgs<ExtArgs>
   _count?: boolean | Prisma.RoleCountOutputTypeDefaultArgs<ExtArgs>
@@ -506,6 +540,7 @@ export type $RolePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     id: string
     name: string
     description: string | null
+    accessLevel: $Enums.AccessLevel
     active: boolean
     createdAt: Date
     updatedAt: Date
@@ -936,6 +971,7 @@ export interface RoleFieldRefs {
   readonly id: Prisma.FieldRef<"Role", 'String'>
   readonly name: Prisma.FieldRef<"Role", 'String'>
   readonly description: Prisma.FieldRef<"Role", 'String'>
+  readonly accessLevel: Prisma.FieldRef<"Role", 'AccessLevel'>
   readonly active: Prisma.FieldRef<"Role", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Role", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Role", 'DateTime'>

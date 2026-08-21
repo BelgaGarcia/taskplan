@@ -26,6 +26,7 @@ enum PeriodicityType {
   FIRST_BUSINESS_DAY
   LAST_BUSINESS_DAY
   CUSTOM_INTERVAL
+  MONTHLY_DAY_RANGE
 }
 
 enum NonexistentDayRule {
@@ -96,8 +97,24 @@ model Position {
   users                User[]
   responsibleFunctions TaskFunction[] @relation("FunctionResponsiblePosition")
   responsibleTasks     Task[]         @relation("TaskResponsiblePosition")
+  inheritances         PositionInheritance[] @relation("PositionInheritanceSource")
+  inheritedBy          PositionInheritance[] @relation("PositionInheritanceTarget")
 
   @@map("positions")
+}
+
+model PositionInheritance {
+  id                  String   @id @default(uuid()) @db.Uuid
+  positionId          String   @db.Uuid
+  inheritedPositionId String   @db.Uuid
+  createdAt           DateTime @default(now())
+
+  position          Position @relation("PositionInheritanceSource", fields: [positionId], references: [id], onDelete: Cascade)
+  inheritedPosition Position @relation("PositionInheritanceTarget", fields: [inheritedPositionId], references: [id], onDelete: Cascade)
+
+  @@unique([positionId, inheritedPositionId])
+  @@index([inheritedPositionId])
+  @@map("position_inheritances")
 }
 
 // ======================================================
@@ -123,6 +140,8 @@ model User {
   responsibleTasks     Task[]           @relation("TaskResponsibleUser")
   taskOccurrences      TaskOccurrence[] @relation("OccurrenceResponsibleUser")
   executedOccurrences  TaskOccurrence[] @relation("OccurrenceExecutedByUser")
+  createdOccurrenceExclusions TaskOccurrenceExclusion[]
+  auditLogs            AuditLog[]
 
   @@index([roleId])
   @@index([positionId])
@@ -166,6 +185,8 @@ model Periodicity {
   interval           Int                @default(1)
   daysOfWeek         Int[]              @default([])
   dayOfMonth         Int?
+  startDayOfMonth    Int?
+  endDayOfMonth      Int?
   month              Int?
   nonexistentDayRule NonexistentDayRule @default(PREVIOUS_DAY)
   active             Boolean            @default(true)
@@ -235,6 +256,7 @@ model Task {
   responsibleUser     User?        @relation("TaskResponsibleUser", fields: [responsibleUserId], references: [id], onDelete: SetNull)
 
   occurrences TaskOccurrence[]
+  occurrenceExclusions TaskOccurrenceExclusion[]
 
   @@index([functionId])
   @@index([periodicityId])
@@ -244,6 +266,21 @@ model Task {
   @@index([endDate])
   @@index([active])
   @@map("tasks")
+}
+
+model TaskOccurrenceExclusion {
+  id              String   @id @default(uuid()) @db.Uuid
+  taskId          String   @db.Uuid
+  originalDate    DateTime @db.Date
+  createdByUserId String?  @db.Uuid
+  createdAt       DateTime @default(now())
+
+  task          Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdByUser User? @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([taskId, originalDate])
+  @@index([createdByUserId])
+  @@map("task_occurrence_exclusions")
 }
 
 // ======================================================
@@ -286,4 +323,21 @@ model TaskOccurrence {
   @@index([status])
   @@index([scheduledDate, status])
   @@map("task_occurrences")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  actorUserId String?  @db.Uuid
+  action      String   @db.VarChar(100)
+  entityType  String   @db.VarChar(100)
+  entityId    String?  @db.VarChar(100)
+  metadata    Json     @db.Json
+  createdAt   DateTime @default(now())
+
+  actorUser User? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([actorUserId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

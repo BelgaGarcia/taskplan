@@ -9,10 +9,13 @@
  */
 export type * from './models/Role.js'
 export type * from './models/Position.js'
+export type * from './models/PositionInheritance.js'
 export type * from './models/User.js'
 export type * from './models/TaskFunction.js'
 export type * from './models/Periodicity.js'
 export type * from './models/Holiday.js'
 export type * from './models/Task.js'
+export type * from './models/TaskOccurrenceExclusion.js'
 export type * from './models/TaskOccurrence.js'
+export type * from './models/AuditLog.js'
 export type * from './commonInputTypes.js'

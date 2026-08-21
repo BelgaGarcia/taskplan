@@ -16,6 +16,7 @@ import { CompleteOccurrenceDto } from './dto/complete-occurrence.dto';
 import { ListOccurrencesQueryDto } from './dto/list-occurrences-query.dto';
 import { RescheduleOccurrenceDto } from './dto/reschedule-occurrence.dto';
 import { CalendarQueryDto } from './dto/calendar-query.dto';
+import { PositionHierarchyService } from '../positions/position-hierarchy.service';
 
 const occurrenceRelations = {
   task: {
@@ -49,7 +50,10 @@ type OccurrenceWithRelations = Prisma.TaskOccurrenceGetPayload<{
 
 @Injectable()
 export class TaskOccurrencesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly hierarchy: PositionHierarchyService,
+  ) {}
 
   async calendar(query: CalendarQueryDto, user: JwtPayload) {
     const from = this.toDate(query.from);
@@ -62,13 +66,13 @@ export class TaskOccurrencesService {
     }
 
     const occurrences = await this.prisma.taskOccurrence.findMany({
-      where: this.buildWhere(query, user, from, to),
+      where: await this.buildWhere(query, user, from, to),
       orderBy: [{ scheduledDate: 'asc' }, { scheduledTime: 'asc' }],
       include: occurrenceRelations,
     });
 
-    const items = occurrences.map((occurrence) =>
-      this.present(occurrence, user),
+    const items = await Promise.all(
+      occurrences.map((occurrence) => this.present(occurrence, user)),
     );
     const grouped = new Map<string, typeof items>();
 
@@ -110,7 +114,7 @@ export class TaskOccurrencesService {
       );
     }
 
-    const where = this.buildWhere(query, user, from, to);
+    const where = await this.buildWhere(query, user, from, to);
     const skip = (query.page - 1) * query.limit;
     const [data, total] = await this.prisma.$transaction([
       this.prisma.taskOccurrence.findMany({
@@ -124,7 +128,9 @@ export class TaskOccurrencesService {
     ]);
 
     return {
-      data: data.map((occurrence) => this.present(occurrence, user)),
+      data: await Promise.all(
+        data.map((occurrence) => this.present(occurrence, user)),
+      ),
       pagination: {
         page: query.page,
         limit: query.limit,
@@ -142,6 +148,12 @@ export class TaskOccurrencesService {
 
     if (!occurrence) {
       throw new NotFoundException('Ocorrência não encontrada.');
+    }
+
+    if (user && !(await this.canOperate(occurrence, user))) {
+      throw new ForbiddenException(
+        'Você não é o responsável por esta ocorrência.',
+      );
     }
 
     return this.present(occurrence, user);
@@ -170,7 +182,7 @@ export class TaskOccurrencesService {
 
   async start(id: string, user: JwtPayload) {
     const occurrence = await this.findForOperation(id);
-    this.assertCanOperate(occurrence, user);
+    await this.assertCanOperate(occurrence, user);
 
     if (occurrence.status !== TaskOccurrenceStatus.PENDING) {
       throw new BadRequestException(
@@ -196,6 +208,8 @@ export class TaskOccurrencesService {
       );
     }
 
+    await this.auditOperation(occurrence, user, 'OCCURRENCE_STARTED');
+
     return this.findOne(id, user);
   }
 
@@ -212,7 +226,7 @@ export class TaskOccurrencesService {
     }
 
     if (occurrence.status === TaskOccurrenceStatus.PENDING) {
-      this.assertCanOperate(occurrence, user);
+      await this.assertCanOperate(occurrence, user);
     } else if (
       !this.isAdmin(user) &&
       occurrence.executedByUserId !== user.sub
@@ -261,6 +275,8 @@ export class TaskOccurrencesService {
       );
     }
 
+    await this.auditOperation(occurrence, user, `OCCURRENCE_${dto.result}`);
+
     return this.findOne(id, user);
   }
 
@@ -277,7 +293,7 @@ export class TaskOccurrencesService {
       );
     }
 
-    this.assertCanOperate(occurrence, user);
+    await this.assertCanOperate(occurrence, user);
 
     if (
       occurrence.status === TaskOccurrenceStatus.IN_PROGRESS &&
@@ -289,21 +305,99 @@ export class TaskOccurrencesService {
       );
     }
 
-    return this.prisma.taskOccurrence
-      .update({
-        where: { id },
-        data: {
-          scheduledDate: this.toDate(dto.scheduledDate),
-          ...(dto.scheduledTime !== undefined
-            ? { scheduledTime: dto.scheduledTime }
-            : {}),
-        },
-        include: occurrenceRelations,
-      })
-      .then((updated) => this.present(updated, user));
+    const updated = await this.prisma.taskOccurrence.update({
+      where: { id },
+      data: {
+        scheduledDate: this.toDate(dto.scheduledDate),
+        ...(dto.scheduledTime !== undefined
+          ? { scheduledTime: dto.scheduledTime }
+          : {}),
+      },
+      include: occurrenceRelations,
+    });
+    await this.auditOperation(occurrence, user, 'OCCURRENCE_RESCHEDULED');
+    return this.present(updated, user);
   }
 
-  private buildWhere(
+  async deleteForAdmin(
+    id: string,
+    scope: 'current' | 'future',
+    user: JwtPayload,
+  ) {
+    if (!this.isAdmin(user)) {
+      throw new ForbiddenException(
+        'A exclusão física exige perfil administrador.',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const occurrence = await tx.taskOccurrence.findUnique({
+        where: { id },
+        include: { task: true },
+      });
+      if (!occurrence) {
+        throw new NotFoundException('Ocorrência não encontrada.');
+      }
+
+      let removedCount = 1;
+      if (scope === 'future') {
+        const removed = await tx.taskOccurrence.deleteMany({
+          where: {
+            taskId: occurrence.taskId,
+            originalDate: { gte: occurrence.originalDate },
+          },
+        });
+        removedCount = removed.count;
+
+        const lastAllowedDate = new Date(occurrence.originalDate);
+        lastAllowedDate.setUTCDate(lastAllowedDate.getUTCDate() - 1);
+        await tx.task.update({
+          where: { id: occurrence.taskId },
+          data:
+            lastAllowedDate < occurrence.task.startDate
+              ? { active: false }
+              : { endDate: lastAllowedDate },
+        });
+      } else {
+        await tx.taskOccurrence.delete({ where: { id } });
+        await tx.taskOccurrenceExclusion.upsert({
+          where: {
+            taskId_originalDate: {
+              taskId: occurrence.taskId,
+              originalDate: occurrence.originalDate,
+            },
+          },
+          create: {
+            taskId: occurrence.taskId,
+            originalDate: occurrence.originalDate,
+            createdByUserId: user.sub,
+          },
+          update: {},
+        });
+      }
+
+      await tx.auditLog.create({
+        data: {
+          actorUserId: user.sub,
+          action: 'OCCURRENCE_PHYSICALLY_DELETED',
+          entityType: 'TaskOccurrence',
+          entityId: occurrence.id,
+          metadata: {
+            occurrenceId: occurrence.id,
+            taskId: occurrence.taskId,
+            originalDate: occurrence.originalDate.toISOString(),
+            scheduledDate: occurrence.scheduledDate.toISOString(),
+            scope,
+            removedCount,
+          },
+        },
+      });
+
+      return { id, scope, removedCount };
+    });
+  }
+
+  private async buildWhere(
     query: {
       taskId?: string;
       functionId?: string;
@@ -314,7 +408,7 @@ export class TaskOccurrencesService {
     user: JwtPayload,
     from?: Date,
     to?: Date,
-  ): Prisma.TaskOccurrenceWhereInput {
+  ): Promise<Prisma.TaskOccurrenceWhereInput> {
     const filters: Prisma.TaskOccurrenceWhereInput[] = [];
 
     if (query.taskId) filters.push({ taskId: query.taskId });
@@ -333,21 +427,25 @@ export class TaskOccurrencesService {
       });
     }
     if (query.scope === 'mine' && !this.isAdmin(user)) {
-      filters.push(this.mineWhere(user));
+      filters.push(await this.mineWhere(user));
     }
 
     return filters.length ? { AND: filters } : {};
   }
 
-  private mineWhere(user: JwtPayload): Prisma.TaskOccurrenceWhereInput {
-    const positionId = user.positionId;
-    const fallbackPositionFilters = positionId
+  private async mineWhere(
+    user: JwtPayload,
+  ): Promise<Prisma.TaskOccurrenceWhereInput> {
+    const allowedPositionIds = user.positionId
+      ? await this.hierarchy.getInheritedPositionIds(user.positionId)
+      : [];
+    const fallbackPositionFilters = allowedPositionIds.length
       ? [
           {
             responsibleUserId: null,
             task: {
               responsibleUserId: null,
-              responsiblePositionId: positionId,
+              responsiblePositionId: { in: allowedPositionIds },
             },
           },
           {
@@ -357,7 +455,7 @@ export class TaskOccurrencesService {
               responsiblePositionId: null,
               function: {
                 responsibleUserId: null,
-                responsiblePositionId: positionId,
+                responsiblePositionId: { in: allowedPositionIds },
               },
             },
           },
@@ -396,17 +494,23 @@ export class TaskOccurrencesService {
     return occurrence;
   }
 
-  private present(occurrence: OccurrenceWithRelations, user?: JwtPayload) {
+  private async present(
+    occurrence: OccurrenceWithRelations,
+    user?: JwtPayload,
+  ) {
     return {
       ...occurrence,
       overdue:
         occurrence.status === TaskOccurrenceStatus.PENDING &&
         occurrence.scheduledDate < this.today(),
-      canOperate: user ? this.canOperate(occurrence, user) : false,
+      canOperate: user ? await this.canOperate(occurrence, user) : false,
     };
   }
 
-  private canOperate(occurrence: OccurrenceWithRelations, user: JwtPayload) {
+  private async canOperate(
+    occurrence: OccurrenceWithRelations,
+    user: JwtPayload,
+  ) {
     if (this.isAdmin(user)) return true;
 
     const directUserId =
@@ -420,14 +524,18 @@ export class TaskOccurrencesService {
       occurrence.task.responsiblePositionId ??
       occurrence.task.function.responsiblePositionId;
 
-    return !!user.positionId && responsiblePositionId === user.positionId;
+    if (!user.positionId || !responsiblePositionId) return false;
+    const allowedPositionIds = await this.hierarchy.getInheritedPositionIds(
+      user.positionId,
+    );
+    return allowedPositionIds.includes(responsiblePositionId);
   }
 
-  private assertCanOperate(
+  private async assertCanOperate(
     occurrence: OccurrenceWithRelations,
     user: JwtPayload,
   ) {
-    if (!this.canOperate(occurrence, user)) {
+    if (!(await this.canOperate(occurrence, user))) {
       throw new ForbiddenException(
         'Você não é o responsável por esta ocorrência.',
       );
@@ -454,5 +562,27 @@ export class TaskOccurrencesService {
     return new Date(
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
     );
+  }
+
+  private auditOperation(
+    occurrence: OccurrenceWithRelations,
+    user: JwtPayload,
+    action: string,
+  ) {
+    return this.prisma.auditLog.create({
+      data: {
+        actorUserId: user.sub,
+        action,
+        entityType: 'TaskOccurrence',
+        entityId: occurrence.id,
+        metadata: {
+          occurrenceId: occurrence.id,
+          taskId: occurrence.taskId,
+          actorPositionId: user.positionId ?? null,
+          originalDate: occurrence.originalDate.toISOString(),
+          scheduledDate: occurrence.scheduledDate.toISOString(),
+        },
+      },
+    });
   }
 }
