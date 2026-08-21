@@ -3,13 +3,18 @@ import { PeriodicitiesService } from './periodicities.service';
 
 describe('PeriodicitiesService', () => {
   const createService = () => {
+    const created: { data?: Record<string, unknown> } = {};
     const prisma = {
       periodicity: {
         findFirst: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({ id: 'periodicity' }),
+        create: jest.fn(({ data }: { data: Record<string, unknown> }) => {
+          created.data = data;
+          return Promise.resolve({ id: 'periodicity' });
+        }),
       },
     };
     return {
+      created,
       prisma,
       service: new PeriodicitiesService(prisma as never, {} as never),
     };
@@ -57,6 +62,113 @@ describe('PeriodicitiesService', () => {
         nonexistentDayRule: 'PREVIOUS_DAY',
       } as never),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('normalizes, sorts and deduplicates weekday configuration', async () => {
+    const { created, service } = createService();
+    await service.create({
+      name: 'Dias alternados',
+      type: 'SPECIFIC_WEEKDAYS',
+      daysOfWeek: [5, 1, 5, 3],
+    } as never);
+
+    expect(created.data?.['daysOfWeek']).toEqual([1, 3, 5]);
+  });
+
+  const existing = {
+    id: 'periodicity',
+    name: 'Mensal',
+    type: 'MONTHLY',
+    interval: 1,
+    daysOfWeek: [],
+    dayOfMonth: 15,
+    startDayOfMonth: null,
+    endDayOfMonth: null,
+    month: null,
+    nonexistentDayRule: 'PREVIOUS_DAY',
+    active: true,
+  };
+
+  const createUpdateService = () => {
+    const captured: {
+      updateData?: Record<string, unknown>;
+      deletionWhere?: {
+        status: string;
+        originalDate: { gte: Date };
+        task: { periodicityId: string };
+      };
+    } = {};
+    const tx = {
+      periodicity: {
+        update: jest.fn(({ data }: { data: Record<string, unknown> }) => {
+          captured.updateData = data;
+          return Promise.resolve(existing);
+        }),
+      },
+      taskOccurrence: {
+        deleteMany: jest.fn(
+          ({
+            where,
+          }: {
+            where: NonNullable<typeof captured.deletionWhere>;
+          }) => {
+            captured.deletionWhere = where;
+            return Promise.resolve({ count: 1 });
+          },
+        ),
+      },
+    };
+    const prisma = {
+      periodicity: {
+        findUnique: jest.fn().mockResolvedValue(existing),
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+      $transaction: jest.fn(
+        (callback: (transaction: typeof tx) => Promise<unknown>) =>
+          callback(tx),
+      ),
+    };
+    const generator = { generateForTasks: jest.fn() };
+    return {
+      tx,
+      captured,
+      generator,
+      service: new PeriodicitiesService(prisma as never, generator as never),
+    };
+  };
+
+  it('does not clear occurrences for a name-only update', async () => {
+    const { tx, service } = createUpdateService();
+
+    await service.update('periodicity', { name: 'Mensal revisada' });
+
+    expect(tx.taskOccurrence.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('clears only pending future occurrences after a material update without regenerating', async () => {
+    const { captured, generator, service } = createUpdateService();
+
+    await service.update('periodicity', { interval: 2 });
+
+    expect(captured.deletionWhere?.status).toBe('PENDING');
+    expect(captured.deletionWhere?.originalDate.gte).toBeInstanceOf(Date);
+    expect(captured.deletionWhere?.task.periodicityId).toBe('periodicity');
+    expect(generator.generateForTasks).not.toHaveBeenCalled();
+  });
+
+  it('clears incompatible fields when changing the periodicity type', async () => {
+    const { captured, service } = createUpdateService();
+
+    await service.update('periodicity', {
+      type: 'SPECIFIC_WEEKDAYS',
+      daysOfWeek: [5, 1, 5],
+    } as never);
+
+    expect(captured.updateData?.['daysOfWeek']).toEqual([1, 5]);
+    expect(captured.updateData?.['dayOfMonth']).toBeNull();
+    expect(captured.updateData?.['startDayOfMonth']).toBeNull();
+    expect(captured.updateData?.['endDayOfMonth']).toBeNull();
+    expect(captured.updateData?.['month']).toBeNull();
   });
 
   it.each([

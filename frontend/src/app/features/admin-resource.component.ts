@@ -28,7 +28,7 @@ const definitions: Record<ResourceKey, Definition> = {
   positions: { title: 'Cargos', singular: 'cargo', endpoint: 'positions', icon: 'briefcase', columns: [{ label: 'Nome', value: (r) => value(r, 'name') }, { label: 'Descrição', value: (r) => value(r, 'description') }, { label: 'Estado', value: (r) => value(r, 'active') }], fields: [{ key: 'name', label: 'Nome', type: 'text', required: true }, { key: 'description', label: 'Descrição', type: 'textarea', nullable: true }, { key: 'active', label: 'Ativo', type: 'checkbox' }] },
   users: { title: 'Usuários', singular: 'usuário', endpoint: 'users', icon: 'users', columns: [{ label: 'Nome', value: (r) => value(r, 'name') }, { label: 'E-mail', value: (r) => value(r, 'email') }, { label: 'Perfil', value: (r) => value(r, 'role.name') }, { label: 'Cargo', value: (r) => value(r, 'position.name') }, { label: 'Estado', value: (r) => value(r, 'active') }], fields: [{ key: 'name', label: 'Nome', type: 'text', required: true }, { key: 'email', label: 'E-mail', type: 'email', required: true }, { key: 'password', label: 'Senha', type: 'password', required: true, createOnly: true, hint: 'Obrigatória apenas na criação.' }, { key: 'roleId', label: 'Perfil', type: 'select', required: true, options: 'roles' }, { key: 'positionId', label: 'Cargo', type: 'select', nullable: true, options: 'positions' }, { key: 'active', label: 'Ativo', type: 'checkbox' }] },
   functions: { title: 'Funções', singular: 'função', endpoint: 'functions', icon: 'function', columns: [{ label: 'Nome', value: (r) => value(r, 'name') }, { label: 'Cargo responsável', value: (r) => value(r, 'responsiblePosition.name') }, { label: 'Usuário responsável', value: (r) => value(r, 'responsibleUser.name') }, { label: 'Estado', value: (r) => value(r, 'active') }], fields: [{ key: 'name', label: 'Nome', type: 'text', required: true }, { key: 'description', label: 'Descrição', type: 'textarea', nullable: true }, { key: 'responsiblePositionId', label: 'Cargo responsável', type: 'select', nullable: true, options: 'positions' }, { key: 'responsibleUserId', label: 'Usuário responsável', type: 'select', nullable: true, options: 'users' }, { key: 'active', label: 'Ativo', type: 'checkbox' }] },
-  periodicities: { title: 'Periodicidades', singular: 'periodicidade', endpoint: 'periodicities', icon: 'repeat', columns: [{ label: 'Nome', value: (r) => value(r, 'name') }, { label: 'Tipo', value: (r) => value(r, 'type') }, { label: 'Intervalo', value: (r) => value(r, 'interval') }, { label: 'Estado', value: (r) => value(r, 'active') }], fields: [{ key: 'name', label: 'Nome', type: 'text', required: true }, { key: 'type', label: 'Tipo', type: 'select', required: true, options: 'periodicityTypes' }, { key: 'interval', label: 'Intervalo', type: 'number', required: true }, { key: 'daysOfWeek', label: 'Dias da semana', type: 'weekdays', when: (v) => ['WEEKLY', 'SPECIFIC_WEEKDAYS'].includes(String(v['type'])) }, { key: 'dayOfMonth', label: 'Dia do mês', type: 'number', when: (v) => ['MONTHLY', 'BIMONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'ANNUAL', 'SPECIFIC_MONTH_DAY'].includes(String(v['type'])) }, { key: 'startDayOfMonth', label: 'Dia inicial', type: 'number', when: (v) => v['type'] === 'MONTHLY_DAY_RANGE' }, { key: 'endDayOfMonth', label: 'Dia final', type: 'number', when: (v) => v['type'] === 'MONTHLY_DAY_RANGE' }, { key: 'month', label: 'Mês (1–12)', type: 'number', when: (v) => v['type'] === 'ANNUAL' }, { key: 'nonexistentDayRule', label: 'Regra para data inexistente', type: 'select', required: true, options: 'nonexistentRules' }, { key: 'active', label: 'Ativo', type: 'checkbox' }] },
+  periodicities: { title: 'Periodicidades', singular: 'periodicidade', endpoint: 'periodicities', icon: 'repeat', columns: [{ label: 'Nome', value: (r) => value(r, 'name') }, { label: 'Tipo', value: (r) => value(r, 'type') }, { label: 'Intervalo', value: (r) => value(r, 'interval') }, { label: 'Estado', value: (r) => value(r, 'active') }], fields: [{ key: 'name', label: 'Nome', type: 'text', required: true }, { key: 'type', label: 'Tipo', type: 'select', required: true, options: 'periodicityTypes' }, { key: 'interval', label: 'Intervalo', type: 'number', required: true }, { key: 'daysOfWeek', label: 'Dias da semana', type: 'weekdays', when: (v) => ['WEEKLY', 'SPECIFIC_WEEKDAYS'].includes(String(v['type'])) }, { key: 'dayOfMonth', label: 'Dia do mês', type: 'number', when: (v) => ['MONTHLY', 'BIMONTHLY', 'EVERY_FOUR_MONTHS', 'QUARTERLY', 'SEMIANNUAL', 'ANNUAL', 'SPECIFIC_MONTH_DAY'].includes(String(v['type'])) }, { key: 'startDayOfMonth', label: 'Dia inicial', type: 'number', when: (v) => v['type'] === 'MONTHLY_DAY_RANGE' }, { key: 'endDayOfMonth', label: 'Dia final', type: 'number', when: (v) => v['type'] === 'MONTHLY_DAY_RANGE' }, { key: 'month', label: 'Mês (1–12)', type: 'number', when: (v) => v['type'] === 'ANNUAL' }, { key: 'nonexistentDayRule', label: 'Regra para data inexistente', type: 'select', required: true, options: 'nonexistentRules' }, { key: 'active', label: 'Ativo', type: 'checkbox' }] },
   holidays: { title: 'Feriados', singular: 'feriado', endpoint: 'holidays', icon: 'holiday', columns: [{ label: 'Nome', value: (r) => value(r, 'name') }, { label: 'Data', value: (r) => value(r, 'date') }, { label: 'Tipo', value: (r) => value(r, 'type') }, { label: 'Localidade', value: (r) => value(r, 'locality') }, { label: 'Estado', value: (r) => value(r, 'active') }], fields: [{ key: 'name', label: 'Nome', type: 'text', required: true }, { key: 'date', label: 'Data', type: 'date', required: true }, { key: 'type', label: 'Tipo', type: 'select', required: true, options: 'holidayTypes' }, { key: 'locality', label: 'Localidade', type: 'text', nullable: true }, { key: 'recurringAnnual', label: 'Recorrência anual', type: 'checkbox' }, { key: 'active', label: 'Ativo', type: 'checkbox' }] },
   tasks: { title: 'Tarefas', singular: 'tarefa', endpoint: 'tasks', icon: 'task', columns: [{ label: 'Nome', value: (r) => value(r, 'name') }, { label: 'Função', value: (r) => value(r, 'function.name') }, { label: 'Periodicidade', value: (r) => value(r, 'periodicity.name') }, { label: 'Responsável', value: (r) => value(r, 'responsibleUser.name') !== '—' ? value(r, 'responsibleUser.name') : value(r, 'responsiblePosition.name') }, { label: 'Estado', value: (r) => value(r, 'active') }], fields: [{ key: 'name', label: 'Nome', type: 'text', required: true }, { key: 'description', label: 'Descrição', type: 'textarea', nullable: true }, { key: 'functionId', label: 'Função', type: 'select', required: true, options: 'functions' }, { key: 'periodicityId', label: 'Periodicidade', type: 'select', required: true, options: 'periodicities' }, { key: 'responsiblePositionId', label: 'Cargo responsável', type: 'select', nullable: true, options: 'positions' }, { key: 'responsibleUserId', label: 'Usuário responsável', type: 'select', nullable: true, options: 'users' }, { key: 'startDate', label: 'Início da vigência', type: 'date', required: true }, { key: 'endDate', label: 'Fim da vigência', type: 'date', nullable: true }, { key: 'scheduledTime', label: 'Horário', type: 'time', nullable: true }, { key: 'estimatedDurationMinutes', label: 'Duração estimada (minutos)', type: 'number', nullable: true }, { key: 'mandatory', label: 'Obrigatória', type: 'checkbox' }, { key: 'displayOrder', label: 'Ordem de exibição', type: 'number' }, { key: 'advanceOnNonBusinessDay', label: 'Antecipar em dia não útil', type: 'checkbox' }, { key: 'active', label: 'Ativo', type: 'checkbox' }] },
 };
@@ -59,7 +59,7 @@ export class AdminResourceComponent implements OnInit {
   options: Record<string, NamedOption[]> = {
     roles: [], positions: [], users: [], functions: [], periodicities: [],
     accessLevels: [{ id: 'ADMIN', name: 'Administrador' }, { id: 'OPERATOR', name: 'Operador' }],
-    periodicityTypes: ['DAILY','WEEKLY','BIWEEKLY','MONTHLY','BIMONTHLY','QUARTERLY','SEMIANNUAL','ANNUAL','SPECIFIC_WEEKDAYS','SPECIFIC_MONTH_DAY','FIRST_BUSINESS_DAY','LAST_BUSINESS_DAY','CUSTOM_INTERVAL','MONTHLY_DAY_RANGE'].map((id) => ({ id, name: id })),
+    periodicityTypes: ['DAILY','WEEKLY','BIWEEKLY','MONTHLY','BIMONTHLY','EVERY_FOUR_MONTHS','QUARTERLY','SEMIANNUAL','ANNUAL','SPECIFIC_WEEKDAYS','SPECIFIC_MONTH_DAY','FIRST_BUSINESS_DAY','LAST_BUSINESS_DAY','CUSTOM_INTERVAL','MONTHLY_DAY_RANGE'].map((id) => ({ id, name: id })),
     nonexistentRules: ['PREVIOUS_DAY','LAST_DAY_OF_MONTH','NEXT_MONTH','SKIP'].map((id) => ({ id, name: id })),
     holidayTypes: ['NATIONAL','STATE','MUNICIPAL','INTERNAL'].map((id) => ({ id, name: id })),
   };
@@ -143,10 +143,15 @@ export class AdminResourceComponent implements OnInit {
 
   save(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); this.modalError = 'Revise os campos obrigatórios.'; return; }
-    this.saving = true; this.modalError = '';
     const payload = this.payload();
-    const request = this.mode === 'edit' && this.selected ? this.api.update<Row>(this.definition.endpoint, this.selected.id, payload) : this.api.create<Row>(this.definition.endpoint, payload);
-    request.subscribe({ next: () => { this.saving = false; this.closeModal(); this.notice = `${this.definition.singular[0].toUpperCase()}${this.definition.singular.slice(1)} salvo com sucesso.${this.definition.endpoint === 'tasks' && this.mode === 'create' ? ' A tarefa aparecerá no calendário após a geração das ocorrências.' : ''}`; this.load(this.pagination.page); }, error: (response: { error?: { message?: string | string[] } }) => { this.saving = false; const message = response.error?.message; this.modalError = Array.isArray(message) ? message.join(' ') : message || 'Não foi possível salvar o cadastro.'; } });
+    const validationError = this.periodicityValidationError(payload);
+    if (validationError) { this.modalError = validationError; return; }
+    const editing = this.mode === 'edit' && !!this.selected;
+    const materiallyChanged = editing && this.periodicityMateriallyChanged(payload);
+    const creatingTask = this.definition.endpoint === 'tasks' && this.mode === 'create';
+    this.saving = true; this.modalError = '';
+    const request = editing && this.selected ? this.api.update<Row>(this.definition.endpoint, this.selected.id, payload) : this.api.create<Row>(this.definition.endpoint, payload);
+    request.subscribe({ next: () => { this.saving = false; this.closeModal(); this.load(this.pagination.page); this.notice = materiallyChanged ? 'Periodicidade salva. As ocorrências pendentes futuras foram removidas; use “Gerar agenda” para criar a nova agenda.' : `${this.definition.singular[0].toUpperCase()}${this.definition.singular.slice(1)} salvo com sucesso.${creatingTask ? ' A tarefa aparecerá no calendário após a geração das ocorrências.' : ''}`; }, error: (response: { error?: { message?: string | string[] } }) => { this.saving = false; const message = response.error?.message; this.modalError = Array.isArray(message) ? message.join(' ') : message || 'Não foi possível salvar o cadastro.'; } });
   }
 
   applyAction(): void {
@@ -205,6 +210,39 @@ export class AdminResourceComponent implements OnInit {
         .map((item) => Number(item.trim()))
         .filter((item) => Number.isInteger(item) && item >= 1 && item <= 7),
     )).sort((first, second) => first - second);
+  }
+
+  private periodicityValidationError(payload: Record<string, unknown>): string {
+    if (this.definition.endpoint !== 'periodicities') return '';
+    const type = String(payload['type'] ?? '');
+    if (['WEEKLY', 'SPECIFIC_WEEKDAYS'].includes(type) && this.weekdaysFrom(payload['daysOfWeek']).length === 0) {
+      return 'Selecione ao menos um dia da semana.';
+    }
+    if (type === 'MONTHLY_DAY_RANGE') {
+      const start = Number(payload['startDayOfMonth']);
+      const end = Number(payload['endDayOfMonth']);
+      if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || start > 31 || end < 1 || end > 31) {
+        return 'Informe os dias inicial e final da faixa, entre 1 e 31.';
+      }
+      if (start > end) return 'O dia inicial da faixa não pode ser maior que o dia final.';
+    }
+    return '';
+  }
+
+  private periodicityMateriallyChanged(payload: Record<string, unknown>): boolean {
+    if (this.definition.endpoint !== 'periodicities' || !this.selected) return false;
+    const type = String(payload['type'] ?? '');
+    if (type !== String(this.selected['type'] ?? '')) return true;
+    const materialFields = ['interval'];
+    if (['WEEKLY', 'SPECIFIC_WEEKDAYS'].includes(type)) materialFields.push('daysOfWeek');
+    if (['MONTHLY', 'BIMONTHLY', 'EVERY_FOUR_MONTHS', 'QUARTERLY', 'SEMIANNUAL', 'ANNUAL', 'SPECIFIC_MONTH_DAY'].includes(type)) materialFields.push('dayOfMonth', 'nonexistentDayRule');
+    if (type === 'MONTHLY_DAY_RANGE') materialFields.push('startDayOfMonth', 'endDayOfMonth');
+    if (type === 'ANNUAL') materialFields.push('month');
+    return materialFields.some((key) => {
+      const next = key === 'daysOfWeek' ? this.weekdaysFrom(payload[key]) : payload[key] ?? null;
+      const current = key === 'daysOfWeek' ? this.weekdaysFrom(this.selected?.[key]) : this.selected?.[key] ?? null;
+      return JSON.stringify(next) !== JSON.stringify(current);
+    });
   }
 
   private formValue(row: Row, key: string): string | number | boolean | null {

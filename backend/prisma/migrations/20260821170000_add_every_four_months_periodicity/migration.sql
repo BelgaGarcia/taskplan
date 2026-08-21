@@ -1,0 +1,1 @@
+ALTER TYPE "PeriodicityType" ADD VALUE 'EVERY_FOUR_MONTHS';

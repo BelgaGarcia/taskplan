@@ -624,6 +624,7 @@ WEEKLY
 BIWEEKLY
 MONTHLY
 BIMONTHLY
+EVERY_FOUR_MONTHS
 QUARTERLY
 SEMIANNUAL
 ANNUAL
@@ -694,6 +695,28 @@ Convenção utilizada:
 7 = Domingo
 ```
 
+O `interval` é contado em semanas ISO ancoradas na semana da data inicial da
+tarefa. Assim, `interval: 2` gera somente nos dias selecionados a cada duas
+semanas, inclusive em viradas de mês e ano.
+
+## A cada quatro meses
+
+```json
+{
+  "name": "Fechamento quadrimestral",
+  "type": "EVERY_FOUR_MONTHS",
+  "interval": 1,
+  "dayOfMonth": 31,
+  "nonexistentDayRule": "LAST_DAY_OF_MONTH",
+  "active": true
+}
+```
+
+O ciclo é ancorado no mês da data inicial da tarefa. `interval: 1` representa
+quatro meses e `interval: 2`, oito meses. Se `dayOfMonth` for omitido, é usado o
+dia da data inicial. Dias inexistentes seguem `nonexistentDayRule`:
+`PREVIOUS_DAY`, `LAST_DAY_OF_MONTH`, `NEXT_MONTH` ou `SKIP`.
+
 ## Faixa de dias mensal
 
 ```json
@@ -710,6 +733,18 @@ Convenção utilizada:
 O intervalo é inclusivo: a agenda contém todas as datas válidas entre os dois
 limites. Quando datas diferentes são antecipadas para o mesmo dia útil, cada
 data original continua sendo uma ocorrência distinta.
+
+## Atualizar periodicidade
+
+### `PATCH /api/periodicities/:id`
+
+Alterações em tipo, intervalo, dias da semana, dia ou faixa mensal, mês e regra
+de data inexistente removem, na mesma transação, apenas ocorrências `PENDING`
+com `originalDate` a partir da data atual. Ocorrências passadas ou em outros
+estados, reagendamentos, exclusões e histórico são preservados. A geração não é
+automática: depois da alteração, use `POST /api/task-occurrences/generate`.
+
+Alterações cadastrais, como a mudança do nome, não removem ocorrências.
 
 ## Reativar periodicidade
 
