@@ -61,6 +61,8 @@ main { min-width: 0; }
 .primary-button, .secondary-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; padding: 0 13px; border: 1px solid transparent; border-radius: 7px; font-size: 13px; font-weight: 650; text-decoration: none; white-space: nowrap; }
 .primary-button { color: #fff; background: var(--primary); box-shadow: 0 4px 12px #3158c833; }
 .primary-button:hover { background: var(--primary-dark); }
+.danger-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; padding: 0 13px; border: 1px solid #c9414b; border-radius: 7px; color: #fff; background: #b4232c; font-size: 13px; font-weight: 650; white-space: nowrap; }
+.danger-button:hover { background: #92242c; }
 .secondary-button { color: #26364f; background: #fff; border-color: #dfe4ec; }
 .secondary-button:hover { background: #f8f9fc; }
 .form-alert { margin: 0 0 14px; padding: 10px 12px; border-radius: 7px; font-size: 13px; }
