@@ -10,43 +10,6 @@ type TaskWithPeriodicity = Prisma.TaskGetPayload<{
 
 type OccurrenceRow = Prisma.TaskOccurrenceCreateManyInput;
 
-/**
- * Resolves several original dates that were advanced to the same date without
- * depending on insertion order. The native occurrence always wins; otherwise
- * the oldest original date is retained.
- */
-export function deduplicateScheduledOccurrences(
-  rows: OccurrenceRow[],
-): OccurrenceRow[] {
-  const selected = new Map<string, OccurrenceRow>();
-
-  for (const row of rows) {
-    const key = `${row.taskId}:${new Date(row.scheduledDate).toISOString()}`;
-    const current = selected.get(key);
-
-    if (!current || shouldPreferOccurrence(row, current)) {
-      selected.set(key, row);
-    }
-  }
-
-  return Array.from(selected.values());
-}
-
-function shouldPreferOccurrence(
-  candidate: OccurrenceRow,
-  current: OccurrenceRow,
-): boolean {
-  const candidateOriginal = new Date(candidate.originalDate).getTime();
-  const currentOriginal = new Date(current.originalDate).getTime();
-  const candidateScheduled = new Date(candidate.scheduledDate).getTime();
-  const currentScheduled = new Date(current.scheduledDate).getTime();
-  const candidateIsNative = candidateOriginal === candidateScheduled;
-  const currentIsNative = currentOriginal === currentScheduled;
-
-  if (candidateIsNative !== currentIsNative) return candidateIsNative;
-  return candidateOriginal < currentOriginal;
-}
-
 @Injectable()
 export class OccurrenceGeneratorService {
   constructor(private readonly prisma: PrismaService) {}
@@ -99,17 +62,18 @@ export class OccurrenceGeneratorService {
       const excludedOriginalDates = new Set(
         exclusions.map((item) => item.originalDate.getTime()),
       );
-      const distinctRows = deduplicateScheduledOccurrences(
-        rows.filter(
-          (row) =>
-            !excludedOriginalDates.has(new Date(row.originalDate).getTime()),
-        ),
+      // Different original dates must remain distinct occurrences even when
+      // their business-day adjustment places them on the same scheduled date.
+      // Idempotence is guaranteed by the unique taskId/originalDate pair.
+      const rowsToCreate = rows.filter(
+        (row) =>
+          !excludedOriginalDates.has(new Date(row.originalDate).getTime()),
       );
 
-      attempted += distinctRows.length;
+      attempted += rowsToCreate.length;
 
       const result = await this.prisma.taskOccurrence.createMany({
-        data: distinctRows,
+        data: rowsToCreate,
         skipDuplicates: true,
       });
 

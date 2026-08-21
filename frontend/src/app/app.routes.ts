@@ -6,6 +6,7 @@ import { CalendarComponent } from './features/calendar.component';
 import { AdminResourceComponent } from './features/admin-resource.component';
 import { FutureFeatureComponent } from './features/future-feature.component';
 import { PositionHierarchyComponent } from './features/position-hierarchy.component';
+import { ChangePasswordComponent } from './features/change-password.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -14,6 +15,7 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'calendario' },
+      { path: 'alterar-senha', component: ChangePasswordComponent },
       { path: 'calendario', component: CalendarComponent, data: { scope: 'team' } },
       { path: 'minhas-tarefas', component: CalendarComponent, data: { scope: 'mine', title: 'Minhas tarefas' } },
       { path: 'hoje', component: DashboardComponent },

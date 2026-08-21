@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOkResponse,
@@ -10,6 +18,7 @@ import { HttpCode, HttpStatus } from '@nestjs/common';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { AuthenticatedRequest } from './guards/jwt-auth.guard';
 
@@ -51,6 +60,20 @@ export class AuthController {
   logout(@Body() dto: RefreshTokenDto) {
     return this.authService.logout(dto.refreshToken);
   }
+
+  @Patch('password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Alterar a própria senha, inclusive após uma senha temporária',
+  })
+  changePassword(
+    @Body() dto: ChangePasswordDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.authService.changePassword(request.user!.sub, dto);
+  }
+
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

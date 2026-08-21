@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
@@ -6,6 +10,7 @@ import { createHash, randomUUID, timingSafeEqual } from 'crypto';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { RedisService } from '../../database/redis/redis.service';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import type {
   JwtPayload,
   RefreshJwtPayload,
@@ -55,33 +60,7 @@ export class AuthService {
       throw new UnauthorizedException('E-mail ou senha inválidos.');
     }
 
-    const payload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-      roleId: user.roleId,
-      accessLevel: user.role.accessLevel,
-      positionId: user.positionId,
-    };
-
-    const accessToken = await this.jwtService.signAsync(payload);
-
-    const refreshToken = await this.createRefreshSession(user.id);
-
-    return {
-      accessToken,
-      refreshToken,
-      tokenType: 'Bearer',
-      expiresIn:
-        this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') ?? '15m',
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        active: user.active,
-        role: user.role,
-        position: user.position,
-      },
-    };
+    return this.createSessionResponse(user);
   }
 
   async refresh(refreshToken: string) {
@@ -133,25 +112,7 @@ export class AuthService {
     // de uma nova sessão.
     await this.redisService.delete(sessionKey);
 
-    const accessPayload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-      roleId: user.roleId,
-      accessLevel: user.role.accessLevel,
-      positionId: user.positionId,
-    };
-
-    const accessToken = await this.jwtService.signAsync(accessPayload);
-
-    const newRefreshToken = await this.createRefreshSession(user.id);
-
-    return {
-      accessToken,
-      refreshToken: newRefreshToken,
-      tokenType: 'Bearer',
-      expiresIn:
-        this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') ?? '15m',
-    };
+    return this.createSessionResponse(user);
   }
 
   async logout(refreshToken: string): Promise<void> {
@@ -164,6 +125,94 @@ export class AuthService {
       // token inválido ou expirado não gera erro
       // para o cliente.
     }
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true, position: true },
+    });
+
+    if (!user || !user.active || user.deletedAt || !user.role.active) {
+      throw new UnauthorizedException('Usuário ou perfil de acesso inativo.');
+    }
+
+    const currentPasswordMatches = await argon2.verify(
+      user.passwordHash,
+      dto.currentPassword,
+    );
+    if (!currentPasswordMatches) {
+      throw new UnauthorizedException('A senha atual informada é inválida.');
+    }
+
+    if (await argon2.verify(user.passwordHash, dto.newPassword)) {
+      throw new BadRequestException(
+        'A nova senha deve ser diferente da senha atual.',
+      );
+    }
+
+    const passwordHash = await argon2.hash(dto.newPassword);
+    const invalidatedSessions = await this.redisService.invalidateUserSessions(
+      user.id,
+    );
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const changedUser = await tx.user.update({
+        where: { id: user.id },
+        data: { passwordHash, mustChangePassword: false },
+        include: { role: true, position: true },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorUserId: user.id,
+          action: 'USER_PASSWORD_CHANGED',
+          entityType: 'User',
+          entityId: user.id,
+          metadata: { invalidatedSessions },
+        },
+      });
+      return changedUser;
+    });
+
+    return this.createSessionResponse(updated);
+  }
+
+  private async createSessionResponse(user: {
+    id: string;
+    name: string;
+    email: string;
+    active: boolean;
+    roleId: string;
+    positionId: string | null;
+    mustChangePassword: boolean;
+    role: { accessLevel: JwtPayload['accessLevel'] } & Record<string, unknown>;
+    position: Record<string, unknown> | null;
+  }) {
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      roleId: user.roleId,
+      accessLevel: user.role.accessLevel,
+      positionId: user.positionId,
+    };
+    const accessToken = await this.jwtService.signAsync(payload);
+    const refreshToken = await this.createRefreshSession(user.id);
+
+    return {
+      accessToken,
+      refreshToken,
+      tokenType: 'Bearer',
+      expiresIn:
+        this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') ?? '15m',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        active: user.active,
+        mustChangePassword: user.mustChangePassword,
+        role: user.role,
+        position: user.position,
+      },
+    };
   }
 
   private async createRefreshSession(userId: string): Promise<string> {

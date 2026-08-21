@@ -58,4 +58,71 @@ describe('PeriodicitiesService', () => {
       } as never),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
+
+  it.each([
+    ['DAILY', {}],
+    ['WEEKLY', { daysOfWeek: [5] }],
+    ['MONTHLY', { dayOfMonth: 12 }],
+    ['SPECIFIC_WEEKDAYS', { daysOfWeek: [1, 3, 5] }],
+    ['MONTHLY_DAY_RANGE', { startDayOfMonth: 12, endDayOfMonth: 20 }],
+    ['ANNUAL', { month: 8, dayOfMonth: 21 }],
+  ])('reactivates valid %s periodicities', async (type, configuration) => {
+    const periodicity = {
+      id: 'periodicity',
+      name: 'Periodicidade inativa',
+      type,
+      interval: 1,
+      daysOfWeek: [],
+      dayOfMonth: null,
+      startDayOfMonth: null,
+      endDayOfMonth: null,
+      month: null,
+      nonexistentDayRule: 'PREVIOUS_DAY',
+      active: false,
+      ...configuration,
+    };
+    const prisma = {
+      periodicity: {
+        findUnique: jest.fn().mockResolvedValue(periodicity),
+        update: jest.fn().mockResolvedValue({ ...periodicity, active: true }),
+      },
+      task: { findMany: jest.fn().mockResolvedValue([{ id: 'task-1' }]) },
+    };
+    const generator = { generateForTasks: jest.fn().mockResolvedValue({}) };
+    const service = new PeriodicitiesService(
+      prisma as never,
+      generator as never,
+    );
+
+    await expect(service.reactivate('periodicity')).resolves.toEqual(
+      expect.objectContaining({ active: true }),
+    );
+    expect(generator.generateForTasks).toHaveBeenCalledWith(
+      ['task-1'],
+      expect.any(Date),
+      expect.any(Date),
+    );
+  });
+
+  it('keeps an invalid periodicity inactive and explains why it cannot be reactivated', async () => {
+    const prisma = {
+      periodicity: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'periodicity',
+          name: 'Sem dias',
+          type: 'SPECIFIC_WEEKDAYS',
+          interval: 1,
+          daysOfWeek: [],
+          active: false,
+        }),
+        update: jest.fn(),
+      },
+    };
+    const service = new PeriodicitiesService(prisma as never, {} as never);
+
+    await expect(service.reactivate('periodicity')).rejects.toThrow(
+      'Não foi possível reativar a periodicidade',
+    );
+    expect(prisma.periodicity.update).not.toHaveBeenCalled();
+  });
 });

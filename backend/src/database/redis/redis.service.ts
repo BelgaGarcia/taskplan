@@ -52,4 +52,30 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async delete(key: string): Promise<void> {
     await this.client.del(key);
   }
+
+  async invalidateUserSessions(userId: string): Promise<number> {
+    let invalidated = 0;
+
+    for await (const keys of this.client.scanIterator({
+      MATCH: 'auth:session:*',
+      COUNT: 100,
+    })) {
+      for (const key of keys) {
+        const rawSession = await this.client.get(key);
+        if (!rawSession) continue;
+
+        try {
+          const session = JSON.parse(rawSession) as { userId?: string };
+          if (session.userId === userId) {
+            invalidated += await this.client.del(key);
+          }
+        } catch {
+          // A malformed key cannot belong to a validated session. Leave it to
+          // Redis TTL instead of deleting data with an unknown format.
+        }
+      }
+    }
+
+    return invalidated;
+  }
 }

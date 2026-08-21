@@ -21,7 +21,7 @@ export class LoginComponent {
     this.busy = true;
     this.error = '';
     this.auth.login(this.email, this.password).subscribe({
-      next: () => void this.router.navigateByUrl('/calendario'),
+      next: (tokens) => void this.router.navigateByUrl(tokens.user?.mustChangePassword ? '/alterar-senha' : '/calendario'),
       error: () => { this.error = 'Não foi possível autenticar. Confira as credenciais.'; this.busy = false; },
       complete: () => this.busy = false,
     });

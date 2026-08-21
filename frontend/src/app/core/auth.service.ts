@@ -4,7 +4,7 @@ import { BehaviorSubject, Observable, finalize, map, shareReplay, tap, throwErro
 import { RuntimeConfigService } from './runtime-config.service';
 import type { AccessLevel, User } from './models';
 
-interface Tokens { accessToken: string; refreshToken: string; user?: User; }
+export interface Tokens { accessToken: string; refreshToken: string; user?: User; }
 interface StoredSession { accessToken: string; refreshToken: string; user: User; }
 
 @Injectable({ providedIn: 'root' })
@@ -42,6 +42,7 @@ export class AuthService {
   get isAuthenticated(): boolean { return !!this.accessToken; }
   get accessLevel(): AccessLevel | undefined { return this.user$.value?.role.accessLevel; }
   get isAdmin(): boolean { return this.accessLevel === 'ADMIN'; }
+  get mustChangePassword(): boolean { return this.user$.value?.mustChangePassword === true; }
 
   refresh(): Observable<string> {
     if (!this.refreshToken) return throwError(() => new Error('Sessão não disponível'));
@@ -54,6 +55,12 @@ export class AuthService {
       );
     }
     return this.refreshing$;
+  }
+
+  changeOwnPassword(currentPassword: string, newPassword: string): Observable<Tokens> {
+    return this.http.patch<Tokens>(`${this.config.apiUrl}/auth/password`, { currentPassword, newPassword }).pipe(
+      tap((tokens) => this.apply(tokens)),
+    );
   }
 
   private apply(tokens: Tokens): void {

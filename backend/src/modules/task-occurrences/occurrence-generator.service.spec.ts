@@ -1,11 +1,8 @@
-import {
-  deduplicateScheduledOccurrences,
-  OccurrenceGeneratorService,
-} from './occurrence-generator.service';
+import { OccurrenceGeneratorService } from './occurrence-generator.service';
 
 describe('OccurrenceGeneratorService', () => {
-  it('creates only one occurrence when weekend dates move to the preceding Friday', async () => {
-    const createMany = jest.fn().mockResolvedValue({ count: 1 });
+  it('preserves every original occurrence when weekend dates move to the preceding Friday', async () => {
+    const createMany = jest.fn().mockResolvedValue({ count: 3 });
     const service = new OccurrenceGeneratorService({
       task: {
         findMany: jest.fn().mockResolvedValue([
@@ -33,43 +30,11 @@ describe('OccurrenceGeneratorService', () => {
     const result = await service.generate('2026-08-21', '2026-08-23');
 
     expect(createMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: [
-          expect.objectContaining({
-            taskId: 'task-1',
-            originalDate: new Date('2026-08-21T00:00:00.000Z'),
-            scheduledDate: new Date('2026-08-21T00:00:00.000Z'),
-          }),
-        ],
-        skipDuplicates: true,
-      }),
+      expect.objectContaining({ skipDuplicates: true }),
     );
     expect(result).toEqual(
-      expect.objectContaining({ occurrencesAttempted: 1 }),
+      expect.objectContaining({ occurrencesAttempted: 3 }),
     );
-  });
-
-  it('prefers the native Friday occurrence over weekend dates advanced to Friday', () => {
-    const rows = deduplicateScheduledOccurrences([
-      {
-        taskId: 'task-1',
-        originalDate: new Date('2026-08-22T00:00:00.000Z'),
-        scheduledDate: new Date('2026-08-21T00:00:00.000Z'),
-      },
-      {
-        taskId: 'task-1',
-        originalDate: new Date('2026-08-23T00:00:00.000Z'),
-        scheduledDate: new Date('2026-08-21T00:00:00.000Z'),
-      },
-      {
-        taskId: 'task-1',
-        originalDate: new Date('2026-08-21T00:00:00.000Z'),
-        scheduledDate: new Date('2026-08-21T00:00:00.000Z'),
-      },
-    ]);
-
-    expect(rows).toHaveLength(1);
-    expect(rows[0].originalDate).toEqual(new Date('2026-08-21T00:00:00.000Z'));
   });
 
   it('generates only valid dates from a monthly day range in February', () => {
@@ -88,6 +53,33 @@ describe('OccurrenceGeneratorService', () => {
     expect(dates.map((date) => date.toISOString().slice(0, 10))).toEqual([
       '2028-02-28',
       '2028-02-29',
+    ]);
+  });
+
+  it('generates every day from a monthly day range, including both boundaries', () => {
+    const service = new OccurrenceGeneratorService({} as never);
+    const task = {
+      startDate: new Date('2026-08-01T00:00:00.000Z'),
+      endDate: null,
+      periodicity: { startDayOfMonth: 12, endDayOfMonth: 20, interval: 1 },
+    };
+
+    const dates = service.generateMonthlyDayRange(
+      task as never,
+      new Date('2026-08-01T00:00:00.000Z'),
+      new Date('2026-08-31T00:00:00.000Z'),
+    );
+
+    expect(dates.map((date) => date.toISOString().slice(0, 10))).toEqual([
+      '2026-08-12',
+      '2026-08-13',
+      '2026-08-14',
+      '2026-08-15',
+      '2026-08-16',
+      '2026-08-17',
+      '2026-08-18',
+      '2026-08-19',
+      '2026-08-20',
     ]);
   });
 
