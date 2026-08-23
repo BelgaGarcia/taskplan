@@ -25,15 +25,17 @@ O commit que é liberado precisa estar em `main`; tags existentes nunca são ree
 4. A Release valida novamente o código, cria imagens versionadas, executa `prisma migrate deploy`, promove backend e frontend e verifica os healthchecks.
 5. Se um healthcheck falhar após a promoção, o comando restaura as imagens anteriores de backend e frontend. Migrations são forward-only e não restauram dados automaticamente.
 
-## Origem canônica publicada
+## Origens publicadas
 
-O proxy publica o frontend em `http://infratec.centrasa.corp` e o navegador chama a API em `http://192.168.100.15:5183/api`. Como são origens diferentes, a configuração protegida do host deve manter todas as entradas autorizadas em `CORS_ORIGIN`:
+O frontend pode ser acessado por `http://infratec.centrasa.corp` ou pelos IPs públicos aprovados na porta `5182`. Em todos os casos, o navegador chama a API pelo caminho relativo `/api` na mesma origem. O Nginx do frontend encaminha esse caminho para `backend:3000` pela rede privada do Compose; a porta pública `5183` não é necessária para autenticação.
+
+A configuração protegida do host pode manter as origens abaixo em `CORS_ORIGIN` para compatibilidade com acessos diretos autorizados à API:
 
 ```text
 http://192.168.100.15:5182,http://infratec.centrasa.corp,http://170.231.123.49:5182,http://177.69.184.25:5182,http://189.17.86.162:5182
 ```
 
-Depois de alterar `/etc/taskplan/taskplan.env`, recrie somente o serviço `backend` e valide um preflight para `POST /api/auth/login` com cada origem configurada. Os endereços `170.231.123.49`, `177.69.184.25` e `189.17.86.162` também precisam alcançar o frontend na porta `5182` e a API na porta `5183`; firewall, NAT, proxy e roteamento permanecem controles externos ao Compose e devem ser confirmados pela infraestrutura. O valor de `CORS_ORIGIN` não deve ser substituído por um segredo no repositório.
+Os endereços `170.231.123.49`, `177.69.184.25` e `189.17.86.162` precisam alcançar somente o frontend na porta `5182` para o fluxo web. Firewall, NAT, proxy e roteamento permanecem controles externos ao Compose e devem ser confirmados pela infraestrutura. O valor de `CORS_ORIGIN` não deve ser substituído por um segredo no repositório.
 
 A imagem do frontend recebe `TASKPLAN_RELEASE` pelo Compose e publica o valor no `runtime-config.js`. O menu lateral exibe essa mesma versão com prefixo `v`, mantendo a interface alinhada à Release sem alteração manual no código.
 
@@ -41,7 +43,7 @@ A imagem do frontend recebe `TASKPLAN_RELEASE` pelo Compose e publica o valor no
 
 - Aplicação: `http://192.168.100.15:5182/login`
 - Health do frontend: `http://192.168.100.15:5182/healthz`
-- Health da API: `http://192.168.100.15:5183/api/health`
+- Health integrado da API: `http://192.168.100.15:5182/api/health`
 - Repositório, releases e histórico: `https://github.com/BelgaGarcia/taskplan`
 - Actions: `https://github.com/BelgaGarcia/taskplan/actions`
 

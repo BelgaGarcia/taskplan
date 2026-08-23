@@ -4,8 +4,8 @@ describe('RuntimeConfigService', () => {
   afterEach(() => { window.__taskplanConfig = undefined; });
 
   it('uses the public API URL injected at runtime', () => {
-    window.__taskplanConfig = { apiUrl: 'http://192.168.100.15:5183/api/', release: '1.6.0' };
-    expect(new RuntimeConfigService().apiUrl).toBe('http://192.168.100.15:5183/api');
+    window.__taskplanConfig = { apiUrl: '/api/', release: '1.6.0' };
+    expect(new RuntimeConfigService().apiUrl).toBe('/api');
     expect(new RuntimeConfigService().release).toBe('v1.6.0');
   });
 
