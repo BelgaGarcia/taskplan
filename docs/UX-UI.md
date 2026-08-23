@@ -22,7 +22,7 @@ O rodapé da sidebar exibe a Release injetada pelo `runtime-config.js`. O valor 
 
 O calendário abre em mês e oferece semana útil e semana completa. Em telas estreitas a grade é substituída pela agenda do dia selecionado, evitando rolagem horizontal da página. A grade, mini calendário, filtros e legenda continuam disponíveis no desktop.
 
-No modo diário, cada minuto corresponde a um pixel da grade de 24 horas. Ocorrências cujas durações se sobrepõem são distribuídas em colunas dentro do mesmo intervalo, preservando horário, título e função sem sobrepor cards adjacentes.
+No modo diário, cada minuto corresponde a um pixel da grade de 24 horas. Ocorrências cujas durações se sobrepõem são distribuídas em colunas dentro do mesmo intervalo. Horário e título compartilham a primeira linha para permanecerem visíveis inclusive em cards de 30 minutos; função ou responsável aparece na linha seguinte quando houver altura. Textos sem espaço são truncados com reticências, e o tooltip do card expõe o conteúdo completo e o status.
 
 Ao lado do seletor de visualização, administradores possuem a ação **Limpar mês**. Após confirmação, ela exclui definitivamente todas as ocorrências do mês exibido, sem excluir os cadastros das tarefas. A agenda pode ser gerada novamente depois da limpeza.
 
