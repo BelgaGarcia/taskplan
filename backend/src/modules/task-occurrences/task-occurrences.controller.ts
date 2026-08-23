@@ -31,6 +31,7 @@ import { RescheduleOccurrenceDto } from './dto/reschedule-occurrence.dto';
 import { OccurrenceGeneratorService } from './occurrence-generator.service';
 import { TaskOccurrencesService } from './task-occurrences.service';
 import { CalendarQueryDto } from './dto/calendar-query.dto';
+import { ClearMonthQueryDto } from './dto/clear-month-query.dto';
 import { DeleteOccurrenceDto } from './dto/delete-occurrence.dto';
 
 @ApiTags('Ocorrências de tarefas')
@@ -48,6 +49,19 @@ export class TaskOccurrencesController {
   @ApiOperation({ summary: 'Gerar agenda de ocorrências (idempotente)' })
   generate(@Body() dto: GenerateOccurrencesDto) {
     return this.generator.generate(dto.from, dto.to);
+  }
+
+  @Delete('month')
+  @Roles('ADMIN')
+  @ApiBadRequestResponse({ description: 'Mês inválido.' })
+  @ApiOperation({
+    summary: 'Excluir todas as ocorrências de um mês sem excluir as tarefas',
+  })
+  clearMonth(
+    @Query() query: ClearMonthQueryDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.clearMonth(query.month, request.user!);
   }
 
   @Get('filter-options')

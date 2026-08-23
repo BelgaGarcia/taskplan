@@ -24,6 +24,7 @@ describe('CalendarComponent', () => {
   let fixture: ComponentFixture<CalendarComponent>;
   let component: CalendarComponent;
   let api: jasmine.SpyObj<TaskPlanApiService>;
+  const auth = { isAdmin: false };
 
   beforeEach(async () => {
     const response: CalendarResponse = {
@@ -46,10 +47,14 @@ describe('CalendarComponent', () => {
     api = jasmine.createSpyObj<TaskPlanApiService>('TaskPlanApiService', [
       'calendar',
       'occurrenceOptions',
+      'clearAgendaMonth',
     ]);
     api.calendar.and.returnValue(of(response));
     api.occurrenceOptions.and.returnValue(
       of({ functions: [], users: [], statuses: [] }),
+    );
+    api.clearAgendaMonth.and.returnValue(
+      of({ month: '2026-08', deleted: 5 }),
     );
 
     await TestBed.configureTestingModule({
@@ -57,7 +62,7 @@ describe('CalendarComponent', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: TaskPlanApiService, useValue: api },
-        { provide: AuthService, useValue: { isAdmin: false } },
+        { provide: AuthService, useValue: auth },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { data: { scope: 'team' } } },
@@ -77,7 +82,10 @@ describe('CalendarComponent', () => {
     fixture.detectChanges();
   });
 
-  afterEach(() => fixture.destroy());
+  afterEach(() => {
+    auth.isAdmin = false;
+    fixture.destroy();
+  });
 
   it('opens the hidden activities in a dialog when +1 mais is selected', () => {
     const buttons = fixture.nativeElement.querySelectorAll(
@@ -96,5 +104,39 @@ describe('CalendarComponent', () => {
     expect(
       fixture.nativeElement.querySelector('.calendar-more-list')?.textContent,
     ).toContain('Atividade 5');
+  });
+
+  it('shows the button only to admins and clears the displayed month after confirmation', () => {
+    expect(
+      fixture.nativeElement.querySelector('.clear-month-button'),
+    ).toBeNull();
+
+    fixture.destroy();
+    auth.isAdmin = true;
+    api.calendar.calls.reset();
+    fixture = TestBed.createComponent(CalendarComponent);
+    component = fixture.componentInstance;
+    component.current = new Date(2026, 7, 1);
+    component.miniMonth = new Date(2026, 7, 1);
+    component.selectedDate = new Date(2026, 7, 12);
+    fixture.detectChanges();
+    const openButton = fixture.nativeElement.querySelector(
+      '.clear-month-button',
+    ) as HTMLButtonElement;
+    expect(openButton).not.toBeNull();
+
+    openButton.click();
+    fixture.detectChanges();
+    const modal = fixture.nativeElement.querySelector('.occurrence-modal');
+    expect(modal.getAttribute('role')).toBe('alertdialog');
+    expect(modal.textContent).toContain('Agosto de 2026');
+
+    const confirmButton = modal.querySelector(
+      '.danger-button',
+    ) as HTMLButtonElement;
+    confirmButton.click();
+
+    expect(api.clearAgendaMonth).toHaveBeenCalledOnceWith('2026-08');
+    expect(api.calendar).toHaveBeenCalledTimes(2);
   });
 });

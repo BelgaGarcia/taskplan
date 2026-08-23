@@ -180,6 +180,34 @@ export class TaskOccurrencesService {
     };
   }
 
+  async clearMonth(month: string, user: JwtPayload) {
+    if (!this.isAdmin(user)) {
+      throw new ForbiddenException(
+        'A limpeza mensal exige perfil administrador.',
+      );
+    }
+
+    const [yearValue, monthValue] = month.split('-').map(Number);
+    const from = new Date(Date.UTC(yearValue, monthValue - 1, 1));
+    const to = new Date(Date.UTC(yearValue, monthValue, 1));
+
+    return this.prisma.$transaction(async (tx) => {
+      const deleted = await tx.taskOccurrence.deleteMany({
+        where: { scheduledDate: { gte: from, lt: to } },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorUserId: user.sub,
+          action: 'OCCURRENCE_MONTH_CLEARED',
+          entityType: 'TaskOccurrence',
+          metadata: { month, deleted: deleted.count },
+        },
+      });
+
+      return { month, deleted: deleted.count };
+    });
+  }
+
   async start(id: string, user: JwtPayload) {
     const occurrence = await this.findForOperation(id);
     await this.assertCanOperate(occurrence, user);

@@ -18,7 +18,7 @@ import type {
 import { IconComponent } from '../shared/icon.component';
 
 type CalendarView = 'month' | 'workweek' | 'week' | 'day';
-type ModalMode = 'details' | 'complete' | 'reschedule' | 'generate' | 'delete' | 'more';
+type ModalMode = 'details' | 'complete' | 'reschedule' | 'generate' | 'delete' | 'more' | 'clearMonth';
 
 @Component({
   standalone: true,
@@ -50,6 +50,7 @@ type ModalMode = 'details' | 'complete' | 'reschedule' | 'generate' | 'delete' |
           <div class="calendar-nav"><button class="secondary-button" type="button" (click)="goToday()">Hoje</button><button class="icon-button bordered" type="button" (click)="move(-1)" aria-label="Período anterior"><tp-icon name="chevron-left"></tp-icon></button><button class="icon-button bordered" type="button" (click)="move(1)" aria-label="Próximo período"><tp-icon name="chevron-right"></tp-icon></button><strong>{{ periodLabel }}</strong></div>
           <div class="calendar-actions">
             <label class="view-switch"><span class="sr-only">Visualização</span><select [value]="view" (change)="setView(inputValue($event))"><option value="day">Dia</option><option value="month">Mês</option><option value="workweek">Semana útil</option><option value="week">Semana completa</option></select><tp-icon name="chevron-down"></tp-icon></label>
+            <button *ngIf="auth.isAdmin" type="button" class="danger-button clear-month-button" (click)="openClearMonth()">Limpar mês</button>
             <button type="button" class="secondary-button" (click)="filtersOpen = !filtersOpen"><tp-icon name="filter"></tp-icon>Filtros</button>
             <button *ngIf="auth.isAdmin" type="button" class="secondary-button desktop-only" (click)="openGenerate()"><tp-icon name="repeat"></tp-icon>Gerar agenda</button>
             <button *ngIf="auth.isAdmin" type="button" class="primary-button" (click)="newTask()"><tp-icon name="plus"></tp-icon>Nova tarefa</button>
@@ -68,13 +69,22 @@ type ModalMode = 'details' | 'complete' | 'reschedule' | 'generate' | 'delete' |
     </section>
 
     <div class="modal-backdrop" *ngIf="modal" (click)="closeModal()">
-      <article [class]="modal === 'delete' ? 'confirm-modal occurrence-modal' : 'detail-modal occurrence-modal'" [attr.role]="modal === 'delete' ? 'alertdialog' : 'dialog'" aria-modal="true" [attr.aria-label]="modalTitle" (click)="$event.stopPropagation()">
+      <article [class]="modal === 'delete' || modal === 'clearMonth' ? 'confirm-modal occurrence-modal' : 'detail-modal occurrence-modal'" [attr.role]="modal === 'delete' || modal === 'clearMonth' ? 'alertdialog' : 'dialog'" aria-modal="true" [attr.aria-label]="modalTitle" (click)="$event.stopPropagation()">
         <button type="button" class="close-button" (click)="closeModal()" aria-label="Fechar"><tp-icon name="close"></tp-icon></button>
         <ng-container *ngIf="modal === 'generate'; else calendarModal">
           <p class="eyebrow">Administração</p><h2>Gerar agenda</h2><p>Gera apenas ocorrências que ainda não existem no intervalo informado.</p>
           <form [formGroup]="generationForm" (ngSubmit)="generate()"><label class="form-field"><span>Data inicial</span><input type="date" formControlName="from"></label><label class="form-field"><span>Data final</span><input type="date" formControlName="to"></label><p class="form-alert error" *ngIf="modalError">{{ modalError }}</p><footer><button type="button" class="secondary-button" (click)="closeModal()">Cancelar</button><button type="submit" class="primary-button" [disabled]="acting">{{ acting ? 'Gerando…' : 'Gerar agenda' }}</button></footer></form>
         </ng-container>
         <ng-template #calendarModal>
+          <ng-container *ngIf="modal === 'clearMonth'; else nonClearMonthModal">
+            <tp-icon name="warning"></tp-icon><p class="eyebrow">Administração</p><h2>Limpar agenda de {{ monthName(current) }}?</h2>
+            <p>Todas as ocorrências desse mês, inclusive as concluídas ou em andamento, serão excluídas definitivamente.</p>
+            <p>Os cadastros das tarefas não serão alterados e a agenda poderá ser gerada novamente.</p>
+            <p class="form-alert error" *ngIf="modalError">{{ modalError }}</p>
+            <footer><button type="button" class="secondary-button" [disabled]="acting" (click)="closeModal()">Cancelar</button><button type="button" class="danger-button" [disabled]="acting" (click)="clearMonth()">{{ acting ? 'Limpando…' : 'Limpar agenda do mês' }}</button></footer>
+          </ng-container>
+        </ng-template>
+        <ng-template #nonClearMonthModal>
           <ng-container *ngIf="modal === 'more'; else occurrenceModal">
             <p class="eyebrow">Agenda do dia</p><h2>Outras atividades em {{ moreDate | date:'dd/MM/yyyy' }}</h2><p>Selecione uma atividade para ver seus detalhes.</p>
             <div class="calendar-more-list"><button type="button" *ngFor="let occurrence of moreEvents" class="calendar-more-event" (click)="openOccurrence(occurrence)"><i [class]="'dot ' + statusTone(occurrence.status)"></i><span>{{ occurrence.scheduledTime || 'Sem horário' }}</span><strong>{{ occurrence.task.name }}</strong><small>{{ occurrence.task.function?.name || 'Sem função' }}</small></button></div>
@@ -146,7 +156,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
   get periodLabel(): string { if (this.view === 'month') return this.monthName(this.current); if (this.view === 'day') return new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }).format(this.current); const days = this.visibleDays; return `${days[0].getDate()} – ${days[days.length - 1].getDate()} de ${this.monthName(days[0])}`; }
   get showCurrentTime(): boolean { return this.sameDate(this.current, this.now); }
   get currentTimePosition(): number { return ((this.now.getHours() * 60 + this.now.getMinutes()) / 1440) * 100; }
-  get modalTitle(): string { return this.modal === 'generate' ? 'Gerar agenda' : this.modal === 'delete' ? 'Excluir ocorrência da agenda' : this.modal === 'more' ? 'Outras atividades do dia' : this.selected?.task.name || 'Detalhes da ocorrência'; }
+  get modalTitle(): string { return this.modal === 'generate' ? 'Gerar agenda' : this.modal === 'clearMonth' ? 'Limpar agenda do mês' : this.modal === 'delete' ? 'Excluir ocorrência da agenda' : this.modal === 'more' ? 'Outras atividades do dia' : this.selected?.task.name || 'Detalhes da ocorrência'; }
 
   ngOnInit(): void { this.api.occurrenceOptions().subscribe({ next: (options) => this.options = options }); this.clock = setInterval(() => this.now = new Date(), 60000); this.load(); }
   ngOnDestroy(): void { if (this.clock) clearInterval(this.clock); }
@@ -160,6 +170,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
   clearFilters(): void { this.filters.reset({ functionId: '', responsibleUserId: '', status: '' }); this.load(); }
   newTask(): void { void this.router.navigateByUrl('/tarefas'); }
   openGenerate(): void { this.openModal('generate'); }
+  openClearMonth(): void { this.openModal('clearMonth'); }
   openMoreEvents(day: Date): void { this.moreDate = this.stripTime(day); this.moreEvents = this.eventsFor(day).slice(4); this.openModal('more'); }
   openOccurrence(occurrence: Occurrence): void { this.selected = occurrence; this.rescheduleForm.reset({ scheduledDate: occurrence.scheduledDate.slice(0, 10), scheduledTime: occurrence.scheduledTime || '' }); this.executionForm.reset({ duration: this.toDuration(occurrence.actualDurationMinutes), result: occurrence.result || 'SUCCESS', notes: occurrence.notes || '' }); this.openModal('details'); }
   openDelete(): void { this.modal = 'delete'; this.modalError = ''; setTimeout(() => (document.querySelector('.occurrence-modal .danger-button') as HTMLElement | null)?.focus()); }
@@ -178,6 +189,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
   reschedule(): void { if (!this.selected || this.rescheduleForm.invalid) { this.modalError = 'Informe a nova data.'; return; } this.act(this.api.rescheduleOccurrence(this.selected.id, { scheduledDate: this.rescheduleForm.controls.scheduledDate.value || '', scheduledTime: this.rescheduleForm.controls.scheduledTime.value || undefined })); }
   deleteFromAgenda(): void { if (!this.selected) return; this.acting = true; this.modalError = ''; this.api.deleteOccurrence(this.selected.id, 'current').subscribe({ next: () => { this.acting = false; this.closeModal(); this.load(); }, error: (response: { error?: { message?: string | string[] } }) => { this.acting = false; this.modalError = this.errorMessage(response, 'Não foi possível excluir a ocorrência da agenda.'); } }); }
   generate(): void { if (this.generationForm.invalid) { this.modalError = 'Informe o intervalo da geração.'; return; } const raw = this.generationForm.getRawValue(); this.acting = true; this.api.generateAgenda({ from: raw.from || '', to: raw.to || '' }).subscribe({ next: () => { this.acting = false; this.closeModal(); this.load(); }, error: () => { this.acting = false; this.modalError = 'Não foi possível gerar a agenda.'; } }); }
+  clearMonth(): void { this.acting = true; this.modalError = ''; const month = this.dateKey(this.firstOfMonth(this.current)).slice(0, 7); this.api.clearAgendaMonth(month).subscribe({ next: () => { this.acting = false; this.closeModal(); this.load(); }, error: (response: { error?: { message?: string | string[] } }) => { this.acting = false; this.modalError = this.errorMessage(response, 'Não foi possível limpar a agenda do mês.'); } }); }
   private act(request: ReturnType<TaskPlanApiService['startOccurrence']>): void { this.acting = true; this.modalError = ''; request.subscribe({ next: (updated) => { this.acting = false; this.replace(updated); this.selected = updated; this.modal = 'details'; this.load(); }, error: (response: { error?: { message?: string | string[] } }) => { this.acting = false; this.modalError = this.errorMessage(response, 'A operação não foi concluída.'); } }); }
   private errorMessage(response: { error?: { message?: string | string[] } }, fallback: string): string { const message = response.error?.message; return Array.isArray(message) ? message.join(' ') : message || fallback; }
   private replace(updated: Occurrence): void { const list = this.events.get(updated.scheduledDate.slice(0, 10)) || []; this.events.set(updated.scheduledDate.slice(0, 10), list.map((item) => item.id === updated.id ? updated : item)); }
