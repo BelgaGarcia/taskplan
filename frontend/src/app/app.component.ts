@@ -30,6 +30,7 @@ type TopbarPanel = 'search' | 'notifications' | 'profile' | null;
           <p class="sidebar-label">Futuro</p>
           <nav><a *ngFor="let item of future" [routerLink]="item.path" routerLinkActive="active" (click)="closeDrawer()" [title]="compact ? item.label : ''"><tp-icon [name]="item.icon"></tp-icon><span>{{ item.label }}</span></a></nav>
         </div>
+        <p class="sidebar-version" [attr.aria-label]="'Versão da aplicação ' + config.release" [title]="'Versão ' + config.release"><span class="sidebar-version-label">Versão</span><b>{{ config.release }}</b></p>
         <div class="profile" *ngIf="auth.user$ | async as user"><span class="avatar">{{ user.name.slice(0, 1) }}</span><span class="profile-text"><b>{{ user.name }}</b><small>{{ user.role.name }}</small></span></div>
         <button class="signout" type="button" (click)="signOut()" [title]="compact ? 'Sair' : ''"><tp-icon name="logout"></tp-icon><span>Sair</span></button>
       </aside>
@@ -44,7 +45,7 @@ type TopbarPanel = 'search' | 'notifications' | 'profile' | null;
 })
 export class AppComponent implements OnInit {
   readonly auth = inject(AuthService);
-  private readonly config = inject(RuntimeConfigService);
+  readonly config = inject(RuntimeConfigService);
   private readonly router = inject(Router);
   private readonly api = inject(TaskPlanApiService);
   ready = false;

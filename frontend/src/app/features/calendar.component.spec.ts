@@ -169,4 +169,36 @@ describe('CalendarComponent', () => {
       { actualDurationMinutes: 75, notes: 'Retomar amanhã' },
     );
   });
+
+  it('places overlapping daily events in separate columns', () => {
+    const first = {
+      ...occurrence(1),
+      scheduledTime: '08:30',
+      task: { ...occurrence(1).task, estimatedDurationMinutes: 60 },
+    } as Occurrence;
+    const second = {
+      ...occurrence(2),
+      scheduledTime: '08:45',
+      task: { ...occurrence(2).task, estimatedDurationMinutes: 30 },
+    } as Occurrence;
+    const later = {
+      ...occurrence(3),
+      scheduledTime: '10:00',
+      task: { ...occurrence(3).task, estimatedDurationMinutes: 30 },
+    } as Occurrence;
+
+    const layouts = component.layoutDayEvents([later, second, first]);
+
+    expect(layouts.map((event) => event.occurrence.id)).toEqual([
+      first.id,
+      second.id,
+      later.id,
+    ]);
+    expect(layouts[0].top).toBe(510);
+    expect(layouts[0].left).not.toBe(layouts[1].left);
+    expect(layouts[0].width).toBeLessThan(99);
+    expect(layouts[1].width).toBeLessThan(99);
+    expect(layouts[2].left).toBe(0.5);
+    expect(layouts[2].width).toBe(99);
+  });
 });
