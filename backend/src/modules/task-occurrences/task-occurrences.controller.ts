@@ -25,6 +25,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import type { AuthenticatedRequest } from '../auth/guards/jwt-auth.guard';
 import { CompleteOccurrenceDto } from './dto/complete-occurrence.dto';
+import { ContinueOccurrenceDto } from './dto/continue-occurrence.dto';
 import { GenerateOccurrencesDto } from './dto/generate-occurrences.dto';
 import { ListOccurrencesQueryDto } from './dto/list-occurrences-query.dto';
 import { RescheduleOccurrenceDto } from './dto/reschedule-occurrence.dto';
@@ -126,6 +127,26 @@ export class TaskOccurrencesController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.service.complete(id, dto, request.user!);
+  }
+
+  @Patch(':id/continue-tomorrow')
+  @ApiBadRequestResponse({ description: 'Transição ou dados inválidos.' })
+  @ApiForbiddenResponse({
+    description: 'Usuário não é responsável pela ocorrência.',
+  })
+  @ApiNotFoundResponse({ description: 'Ocorrência não encontrada.' })
+  @ApiConflictResponse({
+    description: 'Já existe ocorrência da tarefa no dia seguinte.',
+  })
+  @ApiOperation({
+    summary: 'Concluir parcialmente e continuar a ocorrência amanhã',
+  })
+  continueTomorrow(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: ContinueOccurrenceDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.continueTomorrow(id, dto, request.user!);
   }
 
   @Patch(':id/reschedule')

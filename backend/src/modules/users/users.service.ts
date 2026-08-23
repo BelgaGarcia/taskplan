@@ -231,6 +231,52 @@ export class UsersService {
     };
   }
 
+  async hardDelete(id: string, actorUserId: string) {
+    const user = await this.findExistingUser(id);
+
+    if (id === actorUserId) {
+      throw new ConflictException(
+        'Você não pode excluir definitivamente o próprio usuário.',
+      );
+    }
+
+    const [functions, tasks, assignedOccurrences, executedOccurrences] =
+      await this.prisma.$transaction([
+        this.prisma.taskFunction.count({
+          where: { responsibleUserId: id },
+        }),
+        this.prisma.task.count({ where: { responsibleUserId: id } }),
+        this.prisma.taskOccurrence.count({
+          where: { responsibleUserId: id },
+        }),
+        this.prisma.taskOccurrence.count({
+          where: { executedByUserId: id },
+        }),
+      ]);
+
+    if (functions + tasks + assignedOccurrences + executedOccurrences > 0) {
+      throw new ConflictException(
+        `O usuário não pode ser excluído definitivamente porque possui vínculos: ${functions} função(ões), ${tasks} tarefa(s), ${assignedOccurrences} ocorrência(s) atribuída(s) e ${executedOccurrences} ocorrência(s) executada(s).`,
+      );
+    }
+
+    const invalidatedSessions = await this.redis.invalidateUserSessions(id);
+
+    return this.prisma.$transaction(async (transaction) => {
+      await transaction.user.delete({ where: { id } });
+      await transaction.auditLog.create({
+        data: {
+          actorUserId,
+          action: 'USER_HARD_DELETED',
+          entityType: 'User',
+          entityId: id,
+          metadata: { name: user.name, email: user.email, invalidatedSessions },
+        },
+      });
+      return { id, invalidatedSessions };
+    });
+  }
+
   private async validateRole(roleId: string): Promise<void> {
     const role = await this.prisma.role.findFirst({
       where: {

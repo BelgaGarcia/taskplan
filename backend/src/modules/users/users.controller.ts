@@ -94,4 +94,15 @@ export class UsersController {
   deactivate(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.usersService.deactivate(id);
   }
+
+  @Delete(':id/permanent')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Excluir definitivamente um usuário' })
+  @ApiConflictResponse({ description: 'O usuário possui vínculos.' })
+  hardDelete(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.usersService.hardDelete(id, request.user!.sub);
+  }
 }

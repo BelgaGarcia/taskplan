@@ -294,6 +294,7 @@ model TaskOccurrence {
   taskId            String  @db.Uuid
   responsibleUserId String? @db.Uuid
   executedByUserId  String? @db.Uuid
+  continuationOfId  String? @unique @db.Uuid
 
   originalDate  DateTime @db.Date
   scheduledDate DateTime @db.Date
@@ -314,6 +315,8 @@ model TaskOccurrence {
   task            Task  @relation(fields: [taskId], references: [id], onDelete: Restrict)
   responsibleUser User? @relation("OccurrenceResponsibleUser", fields: [responsibleUserId], references: [id], onDelete: SetNull)
   executedByUser  User? @relation("OccurrenceExecutedByUser", fields: [executedByUserId], references: [id], onDelete: SetNull)
+  continuationOf  TaskOccurrence? @relation("OccurrenceContinuation", fields: [continuationOfId], references: [id], onDelete: SetNull)
+  continuedBy     TaskOccurrence? @relation("OccurrenceContinuation")
 
   @@unique([taskId, originalDate])
   @@index([taskId, scheduledDate])

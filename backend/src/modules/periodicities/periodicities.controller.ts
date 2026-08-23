@@ -10,12 +10,14 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import type { AuthenticatedRequest } from '../auth/guards/jwt-auth.guard';
 import { CreatePeriodicityDto } from './dto/create-periodicity.dto';
 import { ListPeriodicitiesQueryDto } from './dto/list-periodicities-query.dto';
 import { UpdatePeriodicityDto } from './dto/update-periodicity.dto';
@@ -72,5 +74,15 @@ export class PeriodicitiesController {
   @HttpCode(HttpStatus.OK)
   deactivate(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.periodicitiesService.deactivate(id);
+  }
+
+  @Delete(':id/permanent')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Excluir definitivamente uma periodicidade' })
+  hardDelete(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.periodicitiesService.hardDelete(id, request.user!.sub);
   }
 }

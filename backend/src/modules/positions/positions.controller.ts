@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -23,6 +24,7 @@ import {
 import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import type { AuthenticatedRequest } from '../auth/guards/jwt-auth.guard';
 import { CreatePositionDto } from './dto/create-position.dto';
 import { ListPositionsQueryDto } from './dto/list-positions-query.dto';
 import { UpdatePositionDto } from './dto/update-position.dto';
@@ -90,5 +92,16 @@ export class PositionsController {
   @ApiOperation({ summary: 'Inativar um cargo' })
   deactivate(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.positionsService.deactivate(id);
+  }
+
+  @Delete(':id/permanent')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Excluir definitivamente um cargo' })
+  @ApiConflictResponse({ description: 'O cargo possui vínculos.' })
+  hardDelete(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.positionsService.hardDelete(id, request.user!.sub);
   }
 }

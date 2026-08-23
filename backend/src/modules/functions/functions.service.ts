@@ -207,6 +207,33 @@ export class FunctionsService {
     });
   }
 
+  async hardDelete(id: string, actorUserId: string) {
+    const taskFunction = await this.findOne(id);
+    const linkedTasks = await this.prisma.task.count({
+      where: { functionId: id },
+    });
+
+    if (linkedTasks > 0) {
+      throw new ConflictException(
+        `A função não pode ser excluída definitivamente porque possui ${linkedTasks} tarefa(s) vinculada(s).`,
+      );
+    }
+
+    return this.prisma.$transaction(async (transaction) => {
+      await transaction.taskFunction.delete({ where: { id } });
+      await transaction.auditLog.create({
+        data: {
+          actorUserId,
+          action: 'FUNCTION_HARD_DELETED',
+          entityType: 'TaskFunction',
+          entityId: id,
+          metadata: { name: taskFunction.name },
+        },
+      });
+      return { id };
+    });
+  }
+
   private async ensureNameAvailable(
     name: string,
     ignoreId?: string,

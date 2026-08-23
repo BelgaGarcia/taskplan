@@ -219,6 +219,7 @@ export const TaskOccurrenceScalarFieldEnum = {
   taskId: 'taskId',
   responsibleUserId: 'responsibleUserId',
   executedByUserId: 'executedByUserId',
+  continuationOfId: 'continuationOfId',
   originalDate: 'originalDate',
   scheduledDate: 'scheduledDate',
   scheduledTime: 'scheduledTime',

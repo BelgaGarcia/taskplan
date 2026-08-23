@@ -239,6 +239,33 @@ export class PeriodicitiesService {
     return periodicity;
   }
 
+  async hardDelete(id: string, actorUserId: string) {
+    const periodicity = await this.findOne(id);
+    const linkedTasks = await this.prisma.task.count({
+      where: { periodicityId: id },
+    });
+
+    if (linkedTasks > 0) {
+      throw new ConflictException(
+        `A periodicidade não pode ser excluída definitivamente porque possui ${linkedTasks} tarefa(s) vinculada(s).`,
+      );
+    }
+
+    return this.prisma.$transaction(async (transaction) => {
+      await transaction.periodicity.delete({ where: { id } });
+      await transaction.auditLog.create({
+        data: {
+          actorUserId,
+          action: 'PERIODICITY_HARD_DELETED',
+          entityType: 'Periodicity',
+          entityId: id,
+          metadata: { name: periodicity.name },
+        },
+      });
+      return { id };
+    });
+  }
+
   private async ensureNameAvailable(
     name: string,
     ignoreId?: string,
