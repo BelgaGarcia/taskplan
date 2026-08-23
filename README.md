@@ -719,4 +719,5 @@ If an application healthcheck fails after promotion, it restores the previous fr
 
 The initial host migration preserves the currently running images as `bootstrap-legacy` and does not recreate any service. It must be executed by an administrator from the supplied bootstrap script; the first GitHub Release performs the actual promotion.
 
-Consulte [o fluxo operacional de release e deploy](docs/DEPLOYMENT.md).
+Consulte [a arquitetura e o manual de operação](docs/arquitetura.md) e
+[o fluxo operacional de release e deploy](docs/DEPLOYMENT.md).
