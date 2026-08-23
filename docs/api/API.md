@@ -393,6 +393,10 @@ active
 }
 ```
 
+`description` é opcional. No `POST` e no `PATCH`, uma string é normalizada
+com remoção de espaços nas extremidades; no `PATCH`, enviar `null` ou uma
+string vazia remove a descrição anteriormente cadastrada.
+
 ---
 
 ## Inativar

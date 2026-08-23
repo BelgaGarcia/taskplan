@@ -21,11 +21,12 @@ export class CreatePositionDto {
   @ApiPropertyOptional({
     example: 'Responsável por atividades de infraestrutura.',
     maxLength: 255,
+    nullable: true,
   })
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  description?: string;
+  description?: string | null;
 
   @ApiPropertyOptional({
     example: true,

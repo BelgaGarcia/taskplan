@@ -19,6 +19,13 @@ import { IconComponent } from '../shared/icon.component';
 
 type CalendarView = 'month' | 'workweek' | 'week' | 'day';
 type ModalMode = 'details' | 'complete' | 'reschedule' | 'generate' | 'delete' | 'more' | 'clearMonth';
+type DayEventLayout = {
+  occurrence: Occurrence;
+  top: number;
+  height: number;
+  left: number;
+  width: number;
+};
 
 @Component({
   standalone: true,
@@ -60,7 +67,7 @@ type ModalMode = 'details' | 'complete' | 'reschedule' | 'generate' | 'delete' |
         <p *ngIf="error" class="form-alert error">{{ error }}</p><div *ngIf="loading" class="loading-block">Carregando agenda…</div>
         <ng-container *ngIf="!loading">
           <ng-container *ngIf="view === 'day'; else calendarGrid">
-            <section class="day-calendar" [attr.aria-label]="'Agenda de ' + (current | date:'dd/MM/yyyy')"><header>{{ dayLabel }}</header><div class="day-time-grid"><div class="hour-row" *ngFor="let hour of timeSlots"><time>{{ hour }}</time></div><button type="button" class="day-event" *ngFor="let occurrence of timedEventsFor(current)" [class]="'day-event ' + statusTone(occurrence.status)" [style.top.%]="eventPosition(occurrence)" [style.height.px]="eventHeight(occurrence)" (click)="openOccurrence(occurrence)"><span>{{ occurrence.scheduledTime }}</span><b>{{ occurrence.task.name }}</b><small>{{ occurrence.task.function?.name || 'Sem função' }}</small></button><div *ngIf="showCurrentTime" class="current-time-line" [style.top.%]="currentTimePosition"><i></i><span class="sr-only">Horário atual</span></div></div><p *ngIf="!timedEventsFor(current).length" class="day-empty-state">Sem ocorrências com horário neste dia.</p></section>
+            <section class="day-calendar" [attr.aria-label]="'Agenda de ' + (current | date:'dd/MM/yyyy')"><header>{{ dayLabel }}</header><div class="day-time-grid"><div class="hour-row" *ngFor="let hour of timeSlots"><time>{{ hour }}</time></div><button type="button" class="day-event" *ngFor="let event of dayEventLayouts(current)" [class]="'day-event ' + statusTone(event.occurrence.status)" [style.top.px]="event.top" [style.height.px]="event.height" [style.left.%]="event.left" [style.width.%]="event.width" [attr.aria-label]="event.occurrence.scheduledTime + ' ' + event.occurrence.task.name" (click)="openOccurrence(event.occurrence)"><span>{{ event.occurrence.scheduledTime }}</span><b>{{ event.occurrence.task.name }}</b><small>{{ event.occurrence.task.function?.name || 'Sem função' }}</small></button><div *ngIf="showCurrentTime" class="current-time-line" [style.top.%]="currentTimePosition"><i></i><span class="sr-only">Horário atual</span></div></div><p *ngIf="!timedEventsFor(current).length" class="day-empty-state">Sem ocorrências com horário neste dia.</p></section>
           </ng-container>
           <ng-template #calendarGrid><div class="month-calendar" [class.week-mode]="view !== 'month'" [class.workweek-mode]="view === 'workweek'" [class.month-mode]="view === 'month'"><header class="weekday-row"><span *ngFor="let day of shownWeekdays">{{ day }}</span></header><div class="calendar-grid"><article *ngFor="let day of visibleDays" class="calendar-day" [class.other-month]="view === 'month' && day.getMonth() !== current.getMonth()" [class.selected-day]="sameDate(day, selectedDate)"><button type="button" class="day-number" (click)="selectDate(day)" [class.today]="sameDate(day, todayDate)">{{ day.getDate() }}</button><button type="button" class="calendar-event" *ngFor="let occurrence of eventsFor(day) | slice:0:4" [class]="'calendar-event ' + statusTone(occurrence.status)" (click)="openOccurrence(occurrence)"><i [class]="'dot ' + statusTone(occurrence.status)"></i><span>{{ occurrence.scheduledTime || 'Sem horário' }}</span><b>{{ occurrence.task.name }}</b><small>{{ occurrence.task.function?.name || 'Sem função' }}</small></button><button type="button" *ngIf="eventsFor(day).length > 4" class="more-events" [attr.aria-label]="'Mostrar ' + (eventsFor(day).length - 4) + ' atividades adicionais em ' + (day | date:'dd/MM/yyyy')" (click)="openMoreEvents(day)">+{{ eventsFor(day).length - 4 }} mais</button></article></div></div></ng-template>
           <article class="mobile-agenda"><header><div><p class="eyebrow">Agenda do dia</p><h2>{{ selectedDate | date:'dd/MM/yyyy' }}</h2></div><button class="secondary-button" type="button" (click)="goToday()">Hoje</button></header><button type="button" class="agenda-item" *ngFor="let occurrence of eventsFor(selectedDate)" (click)="openOccurrence(occurrence)"><span>{{ occurrence.scheduledTime || '—' }}</span><div><b>{{ occurrence.task.name }}</b><small>{{ occurrence.task.function?.name || 'Sem função' }}</small></div><i [class]="'dot ' + statusTone(occurrence.status)"></i></button><p *ngIf="!eventsFor(selectedDate).length" class="empty-state">Sem ocorrências neste dia.</p></article>
@@ -177,8 +184,51 @@ export class CalendarComponent implements OnInit, OnDestroy {
   closeModal(): void { if (!this.modal) return; this.modal = undefined; this.selected = undefined; this.moreDate = undefined; this.moreEvents = []; this.modalError = ''; setTimeout(() => this.lastFocused?.focus()); }
   eventsFor(day: Date): Occurrence[] { return this.events.get(this.dateKey(day)) || []; }
   timedEventsFor(day: Date): Occurrence[] { return this.eventsFor(day).filter((occurrence) => Boolean(occurrence.scheduledTime)); }
-  eventPosition(occurrence: Occurrence): number { const [hour, minute] = (occurrence.scheduledTime || '00:00').split(':').map(Number); return ((hour * 60 + minute) / 1440) * 100; }
-  eventHeight(occurrence: Occurrence): number { return Math.max(occurrence.task.estimatedDurationMinutes ?? 60, 30); }
+  dayEventLayouts(day: Date): DayEventLayout[] { return this.layoutDayEvents(this.timedEventsFor(day)); }
+  layoutDayEvents(occurrences: Occurrence[]): DayEventLayout[] {
+    const pending = occurrences
+      .map((occurrence) => {
+        const [hour, minute] = (occurrence.scheduledTime || '00:00').split(':').map(Number);
+        return {
+          occurrence,
+          top: hour * 60 + minute,
+          height: Math.max(occurrence.task.estimatedDurationMinutes ?? 60, 30),
+        };
+      })
+      .sort((first, second) => first.top - second.top || first.occurrence.id.localeCompare(second.occurrence.id));
+    const layouts: DayEventLayout[] = [];
+    let cluster: typeof pending = [];
+    let clusterEnd = -1;
+
+    const flushCluster = (): void => {
+      if (!cluster.length) return;
+      const laneEnds: number[] = [];
+      const positioned = cluster.map((event) => {
+        let lane = laneEnds.findIndex((end) => end <= event.top);
+        if (lane === -1) lane = laneEnds.length;
+        laneEnds[lane] = event.top + event.height;
+        return { ...event, lane };
+      });
+      const laneCount = laneEnds.length;
+      layouts.push(...positioned.map((event) => ({
+        occurrence: event.occurrence,
+        top: event.top,
+        height: event.height,
+        left: (event.lane * 100) / laneCount + 0.5,
+        width: 100 / laneCount - 1,
+      })));
+      cluster = [];
+      clusterEnd = -1;
+    };
+
+    for (const event of pending) {
+      if (cluster.length && event.top >= clusterEnd) flushCluster();
+      cluster.push(event);
+      clusterEnd = Math.max(clusterEnd, event.top + event.height);
+    }
+    flushCluster();
+    return layouts;
+  }
   sameDate(a: Date, b: Date): boolean { return this.dateKey(a) === this.dateKey(b); }
   statusLabel(status: string): string { return ({ PENDING: 'Pendente', IN_PROGRESS: 'Em andamento', COMPLETED: 'Concluída', FAILED: 'Falha', CANCELLED: 'Cancelada' } as Record<string, string>)[status] || status; }
   statusTone(status: string): string { return status === 'COMPLETED' ? 'success' : status === 'FAILED' || status === 'CANCELLED' ? 'danger' : status === 'IN_PROGRESS' ? 'warning' : 'info'; }

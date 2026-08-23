@@ -18,7 +18,11 @@ A navegação é dividida em Operação (Calendário, Hoje e Minhas tarefas), Ad
 
 No desktop a sidebar pode ser recolhida: ficam somente os ícones e o atributo `title` fornece o tooltip nativo. Ela tem rolagem interna, para que nenhum item desapareça em zoom alto. Em até 820 px — inclusive em larguras equivalentes a 200% de zoom — vira um drawer acionado pelo cabeçalho. A sobreposição tem fundo de bloqueio e fecha ao clicar fora.
 
+O rodapé da sidebar exibe a Release injetada pelo `runtime-config.js`. O valor vem de `TASKPLAN_RELEASE`, usado também nas tags das imagens, e permanece visível no modo compacto.
+
 O calendário abre em mês e oferece semana útil e semana completa. Em telas estreitas a grade é substituída pela agenda do dia selecionado, evitando rolagem horizontal da página. A grade, mini calendário, filtros e legenda continuam disponíveis no desktop.
+
+No modo diário, cada minuto corresponde a um pixel da grade de 24 horas. Ocorrências cujas durações se sobrepõem são distribuídas em colunas dentro do mesmo intervalo, preservando horário, título e função sem sobrepor cards adjacentes.
 
 Ao lado do seletor de visualização, administradores possuem a ação **Limpar mês**. Após confirmação, ela exclui definitivamente todas as ocorrências do mês exibido, sem excluir os cadastros das tarefas. A agenda pode ser gerada novamente depois da limpeza.
 

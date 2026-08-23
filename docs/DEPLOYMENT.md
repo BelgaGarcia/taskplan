@@ -27,13 +27,15 @@ O commit que é liberado precisa estar em `main`; tags existentes nunca são ree
 
 ## Origem canônica publicada
 
-O proxy publica o frontend em `http://infratec.centrasa.corp` e o navegador chama a API em `http://192.168.100.15:5183/api`. Como são origens diferentes, a configuração protegida do host deve manter as duas entradas em `CORS_ORIGIN`:
+O proxy publica o frontend em `http://infratec.centrasa.corp` e o navegador chama a API em `http://192.168.100.15:5183/api`. Como são origens diferentes, a configuração protegida do host deve manter todas as entradas autorizadas em `CORS_ORIGIN`:
 
 ```text
-http://192.168.100.15:5182,http://infratec.centrasa.corp
+http://192.168.100.15:5182,http://infratec.centrasa.corp,http://170.231.123.49:5182,http://177.69.184.25:5182,http://189.17.86.162:5182
 ```
 
-Depois de alterar `/etc/taskplan/taskplan.env`, recrie somente o serviço `backend` e valide um preflight para `POST /api/auth/login` com `Origin: http://infratec.centrasa.corp`. O valor não deve ser substituído por um segredo no repositório.
+Depois de alterar `/etc/taskplan/taskplan.env`, recrie somente o serviço `backend` e valide um preflight para `POST /api/auth/login` com cada origem configurada. Os endereços `170.231.123.49`, `177.69.184.25` e `189.17.86.162` também precisam alcançar o frontend na porta `5182` e a API na porta `5183`; firewall, NAT, proxy e roteamento permanecem controles externos ao Compose e devem ser confirmados pela infraestrutura. O valor de `CORS_ORIGIN` não deve ser substituído por um segredo no repositório.
+
+A imagem do frontend recebe `TASKPLAN_RELEASE` pelo Compose e publica o valor no `runtime-config.js`. O menu lateral exibe essa mesma versão com prefixo `v`, mantendo a interface alinhada à Release sem alteração manual no código.
 
 ## Evidências e consulta
 

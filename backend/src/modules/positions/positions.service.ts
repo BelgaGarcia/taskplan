@@ -103,7 +103,7 @@ export class PositionsService {
         ...(normalizedName !== undefined ? { name: normalizedName } : {}),
         ...(updatePositionDto.description !== undefined
           ? {
-              description: updatePositionDto.description.trim() || null,
+              description: updatePositionDto.description?.trim() || null,
             }
           : {}),
         ...(updatePositionDto.active !== undefined
