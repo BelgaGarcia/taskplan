@@ -17,7 +17,11 @@ const occurrence = (number: number): Occurrence =>
     status: 'PENDING',
     overdue: false,
     canOperate: true,
-    task: { id: `task-${number}`, name: `Atividade ${number}` },
+    task: {
+      id: `task-${number}`,
+      name: `Atividade ${number}`,
+      estimatedDurationMinutes: 30,
+    },
   }) as Occurrence;
 
 describe('CalendarComponent', () => {
@@ -200,5 +204,64 @@ describe('CalendarComponent', () => {
     expect(layouts[1].width).toBeLessThan(99);
     expect(layouts[2].left).toBe(0.5);
     expect(layouts[2].width).toBe(99);
+  });
+
+  it('keeps the task name visible on short daily cards and exposes full details', () => {
+    const shortOccurrence = occurrence(1);
+    shortOccurrence.scheduledTime = '08:30';
+    shortOccurrence.status = 'COMPLETED';
+    shortOccurrence.task = {
+      ...shortOccurrence.task,
+      name: 'Conferência de documentos pendentes',
+      estimatedDurationMinutes: 30,
+      function: { id: 'function-1', name: 'Financeiro' },
+    } as Occurrence['task'];
+    const layouts = component.layoutDayEvents([shortOccurrence]);
+
+    expect(layouts[0].height).toBe(30);
+    expect(component.dayEventLabel(shortOccurrence)).toContain(
+      'Conferência de documentos pendentes',
+    );
+    expect(component.dayEventTooltip(shortOccurrence)).toBe(
+      '08:30 · Conferência de documentos pendentes\nFinanceiro · Concluída',
+    );
+
+    fixture.destroy();
+    fixture = TestBed.createComponent(CalendarComponent);
+    component = fixture.componentInstance;
+    component.current = new Date(2026, 7, 12);
+    component.miniMonth = new Date(2026, 7, 1);
+    component.selectedDate = new Date(2026, 7, 12);
+    component.view = 'day';
+    fixture.detectChanges();
+    const card = fixture.nativeElement.querySelector(
+      '.day-event',
+    ) as HTMLButtonElement;
+
+    expect(card.querySelector('.day-event-main')?.textContent).toContain(
+      'Atividade 1',
+    );
+    expect(card.style.height).toBe('30px');
+    expect(card.getAttribute('title')).toContain('Atividade 1');
+    expect(card.getAttribute('aria-label')).toContain('Pendente');
+  });
+
+  it('keeps dense overlapping occurrences individually identifiable', () => {
+    const crowded = Array.from({ length: 6 }, (_, index) => ({
+      ...occurrence(index + 1),
+      scheduledTime: index < 3 ? '08:30' : '08:45',
+    })) as Occurrence[];
+
+    const layouts = component.layoutDayEvents(crowded);
+
+    expect(layouts.length).toBe(6);
+    expect(new Set(layouts.map((event) => event.left)).size).toBe(6);
+    expect(layouts.every((event) => event.width < 17)).toBeTrue();
+    expect(
+      layouts.map((event) => component.dayEventLabel(event.occurrence)),
+    ).toEqual(jasmine.arrayContaining([
+      jasmine.stringContaining('Atividade 1'),
+      jasmine.stringContaining('Atividade 6'),
+    ]));
   });
 });
