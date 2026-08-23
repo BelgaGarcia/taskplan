@@ -39,6 +39,7 @@ export type TaskOccurrenceMinAggregateOutputType = {
   taskId: string | null
   responsibleUserId: string | null
   executedByUserId: string | null
+  continuationOfId: string | null
   originalDate: Date | null
   scheduledDate: Date | null
   scheduledTime: string | null
@@ -57,6 +58,7 @@ export type TaskOccurrenceMaxAggregateOutputType = {
   taskId: string | null
   responsibleUserId: string | null
   executedByUserId: string | null
+  continuationOfId: string | null
   originalDate: Date | null
   scheduledDate: Date | null
   scheduledTime: string | null
@@ -75,6 +77,7 @@ export type TaskOccurrenceCountAggregateOutputType = {
   taskId: number
   responsibleUserId: number
   executedByUserId: number
+  continuationOfId: number
   originalDate: number
   scheduledDate: number
   scheduledTime: number
@@ -103,6 +106,7 @@ export type TaskOccurrenceMinAggregateInputType = {
   taskId?: true
   responsibleUserId?: true
   executedByUserId?: true
+  continuationOfId?: true
   originalDate?: true
   scheduledDate?: true
   scheduledTime?: true
@@ -121,6 +125,7 @@ export type TaskOccurrenceMaxAggregateInputType = {
   taskId?: true
   responsibleUserId?: true
   executedByUserId?: true
+  continuationOfId?: true
   originalDate?: true
   scheduledDate?: true
   scheduledTime?: true
@@ -139,6 +144,7 @@ export type TaskOccurrenceCountAggregateInputType = {
   taskId?: true
   responsibleUserId?: true
   executedByUserId?: true
+  continuationOfId?: true
   originalDate?: true
   scheduledDate?: true
   scheduledTime?: true
@@ -244,6 +250,7 @@ export type TaskOccurrenceGroupByOutputType = {
   taskId: string
   responsibleUserId: string | null
   executedByUserId: string | null
+  continuationOfId: string | null
   originalDate: Date
   scheduledDate: Date
   scheduledTime: string | null
@@ -285,6 +292,7 @@ export type TaskOccurrenceWhereInput = {
   taskId?: Prisma.UuidFilter<"TaskOccurrence"> | string
   responsibleUserId?: Prisma.UuidNullableFilter<"TaskOccurrence"> | string | null
   executedByUserId?: Prisma.UuidNullableFilter<"TaskOccurrence"> | string | null
+  continuationOfId?: Prisma.UuidNullableFilter<"TaskOccurrence"> | string | null
   originalDate?: Prisma.DateTimeFilter<"TaskOccurrence"> | Date | string
   scheduledDate?: Prisma.DateTimeFilter<"TaskOccurrence"> | Date | string
   scheduledTime?: Prisma.StringNullableFilter<"TaskOccurrence"> | string | null
@@ -299,6 +307,8 @@ export type TaskOccurrenceWhereInput = {
   task?: Prisma.XOR<Prisma.TaskScalarRelationFilter, Prisma.TaskWhereInput>
   responsibleUser?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   executedByUser?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  continuationOf?: Prisma.XOR<Prisma.TaskOccurrenceNullableScalarRelationFilter, Prisma.TaskOccurrenceWhereInput> | null
+  continuedBy?: Prisma.XOR<Prisma.TaskOccurrenceNullableScalarRelationFilter, Prisma.TaskOccurrenceWhereInput> | null
 }
 
 export type TaskOccurrenceOrderByWithRelationInput = {
@@ -306,6 +316,7 @@ export type TaskOccurrenceOrderByWithRelationInput = {
   taskId?: Prisma.SortOrder
   responsibleUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   executedByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
+  continuationOfId?: Prisma.SortOrderInput | Prisma.SortOrder
   originalDate?: Prisma.SortOrder
   scheduledDate?: Prisma.SortOrder
   scheduledTime?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -320,10 +331,13 @@ export type TaskOccurrenceOrderByWithRelationInput = {
   task?: Prisma.TaskOrderByWithRelationInput
   responsibleUser?: Prisma.UserOrderByWithRelationInput
   executedByUser?: Prisma.UserOrderByWithRelationInput
+  continuationOf?: Prisma.TaskOccurrenceOrderByWithRelationInput
+  continuedBy?: Prisma.TaskOccurrenceOrderByWithRelationInput
 }
 
 export type TaskOccurrenceWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  continuationOfId?: string
   taskId_originalDate?: Prisma.TaskOccurrenceTaskIdOriginalDateCompoundUniqueInput
   AND?: Prisma.TaskOccurrenceWhereInput | Prisma.TaskOccurrenceWhereInput[]
   OR?: Prisma.TaskOccurrenceWhereInput[]
@@ -345,13 +359,16 @@ export type TaskOccurrenceWhereUniqueInput = Prisma.AtLeast<{
   task?: Prisma.XOR<Prisma.TaskScalarRelationFilter, Prisma.TaskWhereInput>
   responsibleUser?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   executedByUser?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
-}, "id" | "taskId_originalDate">
+  continuationOf?: Prisma.XOR<Prisma.TaskOccurrenceNullableScalarRelationFilter, Prisma.TaskOccurrenceWhereInput> | null
+  continuedBy?: Prisma.XOR<Prisma.TaskOccurrenceNullableScalarRelationFilter, Prisma.TaskOccurrenceWhereInput> | null
+}, "id" | "continuationOfId" | "taskId_originalDate">
 
 export type TaskOccurrenceOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   taskId?: Prisma.SortOrder
   responsibleUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   executedByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
+  continuationOfId?: Prisma.SortOrderInput | Prisma.SortOrder
   originalDate?: Prisma.SortOrder
   scheduledDate?: Prisma.SortOrder
   scheduledTime?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -378,6 +395,7 @@ export type TaskOccurrenceScalarWhereWithAggregatesInput = {
   taskId?: Prisma.UuidWithAggregatesFilter<"TaskOccurrence"> | string
   responsibleUserId?: Prisma.UuidNullableWithAggregatesFilter<"TaskOccurrence"> | string | null
   executedByUserId?: Prisma.UuidNullableWithAggregatesFilter<"TaskOccurrence"> | string | null
+  continuationOfId?: Prisma.UuidNullableWithAggregatesFilter<"TaskOccurrence"> | string | null
   originalDate?: Prisma.DateTimeWithAggregatesFilter<"TaskOccurrence"> | Date | string
   scheduledDate?: Prisma.DateTimeWithAggregatesFilter<"TaskOccurrence"> | Date | string
   scheduledTime?: Prisma.StringNullableWithAggregatesFilter<"TaskOccurrence"> | string | null
@@ -407,6 +425,8 @@ export type TaskOccurrenceCreateInput = {
   task: Prisma.TaskCreateNestedOneWithoutOccurrencesInput
   responsibleUser?: Prisma.UserCreateNestedOneWithoutTaskOccurrencesInput
   executedByUser?: Prisma.UserCreateNestedOneWithoutExecutedOccurrencesInput
+  continuationOf?: Prisma.TaskOccurrenceCreateNestedOneWithoutContinuedByInput
+  continuedBy?: Prisma.TaskOccurrenceCreateNestedOneWithoutContinuationOfInput
 }
 
 export type TaskOccurrenceUncheckedCreateInput = {
@@ -414,6 +434,7 @@ export type TaskOccurrenceUncheckedCreateInput = {
   taskId: string
   responsibleUserId?: string | null
   executedByUserId?: string | null
+  continuationOfId?: string | null
   originalDate: Date | string
   scheduledDate: Date | string
   scheduledTime?: string | null
@@ -425,6 +446,7 @@ export type TaskOccurrenceUncheckedCreateInput = {
   notes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  continuedBy?: Prisma.TaskOccurrenceUncheckedCreateNestedOneWithoutContinuationOfInput
 }
 
 export type TaskOccurrenceUpdateInput = {
@@ -443,6 +465,8 @@ export type TaskOccurrenceUpdateInput = {
   task?: Prisma.TaskUpdateOneRequiredWithoutOccurrencesNestedInput
   responsibleUser?: Prisma.UserUpdateOneWithoutTaskOccurrencesNestedInput
   executedByUser?: Prisma.UserUpdateOneWithoutExecutedOccurrencesNestedInput
+  continuationOf?: Prisma.TaskOccurrenceUpdateOneWithoutContinuedByNestedInput
+  continuedBy?: Prisma.TaskOccurrenceUpdateOneWithoutContinuationOfNestedInput
 }
 
 export type TaskOccurrenceUncheckedUpdateInput = {
@@ -450,6 +474,7 @@ export type TaskOccurrenceUncheckedUpdateInput = {
   taskId?: Prisma.StringFieldUpdateOperationsInput | string
   responsibleUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   executedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  continuationOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -461,6 +486,7 @@ export type TaskOccurrenceUncheckedUpdateInput = {
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  continuedBy?: Prisma.TaskOccurrenceUncheckedUpdateOneWithoutContinuationOfNestedInput
 }
 
 export type TaskOccurrenceCreateManyInput = {
@@ -468,6 +494,7 @@ export type TaskOccurrenceCreateManyInput = {
   taskId: string
   responsibleUserId?: string | null
   executedByUserId?: string | null
+  continuationOfId?: string | null
   originalDate: Date | string
   scheduledDate: Date | string
   scheduledTime?: string | null
@@ -501,6 +528,7 @@ export type TaskOccurrenceUncheckedUpdateManyInput = {
   taskId?: Prisma.StringFieldUpdateOperationsInput | string
   responsibleUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   executedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  continuationOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -524,6 +552,11 @@ export type TaskOccurrenceOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
+export type TaskOccurrenceNullableScalarRelationFilter = {
+  is?: Prisma.TaskOccurrenceWhereInput | null
+  isNot?: Prisma.TaskOccurrenceWhereInput | null
+}
+
 export type TaskOccurrenceTaskIdOriginalDateCompoundUniqueInput = {
   taskId: string
   originalDate: Date | string
@@ -534,6 +567,7 @@ export type TaskOccurrenceCountOrderByAggregateInput = {
   taskId?: Prisma.SortOrder
   responsibleUserId?: Prisma.SortOrder
   executedByUserId?: Prisma.SortOrder
+  continuationOfId?: Prisma.SortOrder
   originalDate?: Prisma.SortOrder
   scheduledDate?: Prisma.SortOrder
   scheduledTime?: Prisma.SortOrder
@@ -556,6 +590,7 @@ export type TaskOccurrenceMaxOrderByAggregateInput = {
   taskId?: Prisma.SortOrder
   responsibleUserId?: Prisma.SortOrder
   executedByUserId?: Prisma.SortOrder
+  continuationOfId?: Prisma.SortOrder
   originalDate?: Prisma.SortOrder
   scheduledDate?: Prisma.SortOrder
   scheduledTime?: Prisma.SortOrder
@@ -574,6 +609,7 @@ export type TaskOccurrenceMinOrderByAggregateInput = {
   taskId?: Prisma.SortOrder
   responsibleUserId?: Prisma.SortOrder
   executedByUserId?: Prisma.SortOrder
+  continuationOfId?: Prisma.SortOrder
   originalDate?: Prisma.SortOrder
   scheduledDate?: Prisma.SortOrder
   scheduledTime?: Prisma.SortOrder
@@ -717,12 +753,60 @@ export type TaskOccurrenceUncheckedUpdateManyWithoutTaskNestedInput = {
   deleteMany?: Prisma.TaskOccurrenceScalarWhereInput | Prisma.TaskOccurrenceScalarWhereInput[]
 }
 
+export type TaskOccurrenceCreateNestedOneWithoutContinuedByInput = {
+  create?: Prisma.XOR<Prisma.TaskOccurrenceCreateWithoutContinuedByInput, Prisma.TaskOccurrenceUncheckedCreateWithoutContinuedByInput>
+  connectOrCreate?: Prisma.TaskOccurrenceCreateOrConnectWithoutContinuedByInput
+  connect?: Prisma.TaskOccurrenceWhereUniqueInput
+}
+
+export type TaskOccurrenceCreateNestedOneWithoutContinuationOfInput = {
+  create?: Prisma.XOR<Prisma.TaskOccurrenceCreateWithoutContinuationOfInput, Prisma.TaskOccurrenceUncheckedCreateWithoutContinuationOfInput>
+  connectOrCreate?: Prisma.TaskOccurrenceCreateOrConnectWithoutContinuationOfInput
+  connect?: Prisma.TaskOccurrenceWhereUniqueInput
+}
+
+export type TaskOccurrenceUncheckedCreateNestedOneWithoutContinuationOfInput = {
+  create?: Prisma.XOR<Prisma.TaskOccurrenceCreateWithoutContinuationOfInput, Prisma.TaskOccurrenceUncheckedCreateWithoutContinuationOfInput>
+  connectOrCreate?: Prisma.TaskOccurrenceCreateOrConnectWithoutContinuationOfInput
+  connect?: Prisma.TaskOccurrenceWhereUniqueInput
+}
+
 export type EnumTaskOccurrenceStatusFieldUpdateOperationsInput = {
   set?: $Enums.TaskOccurrenceStatus
 }
 
 export type NullableEnumTaskOccurrenceResultFieldUpdateOperationsInput = {
   set?: $Enums.TaskOccurrenceResult | null
+}
+
+export type TaskOccurrenceUpdateOneWithoutContinuedByNestedInput = {
+  create?: Prisma.XOR<Prisma.TaskOccurrenceCreateWithoutContinuedByInput, Prisma.TaskOccurrenceUncheckedCreateWithoutContinuedByInput>
+  connectOrCreate?: Prisma.TaskOccurrenceCreateOrConnectWithoutContinuedByInput
+  upsert?: Prisma.TaskOccurrenceUpsertWithoutContinuedByInput
+  disconnect?: Prisma.TaskOccurrenceWhereInput | boolean
+  delete?: Prisma.TaskOccurrenceWhereInput | boolean
+  connect?: Prisma.TaskOccurrenceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TaskOccurrenceUpdateToOneWithWhereWithoutContinuedByInput, Prisma.TaskOccurrenceUpdateWithoutContinuedByInput>, Prisma.TaskOccurrenceUncheckedUpdateWithoutContinuedByInput>
+}
+
+export type TaskOccurrenceUpdateOneWithoutContinuationOfNestedInput = {
+  create?: Prisma.XOR<Prisma.TaskOccurrenceCreateWithoutContinuationOfInput, Prisma.TaskOccurrenceUncheckedCreateWithoutContinuationOfInput>
+  connectOrCreate?: Prisma.TaskOccurrenceCreateOrConnectWithoutContinuationOfInput
+  upsert?: Prisma.TaskOccurrenceUpsertWithoutContinuationOfInput
+  disconnect?: Prisma.TaskOccurrenceWhereInput | boolean
+  delete?: Prisma.TaskOccurrenceWhereInput | boolean
+  connect?: Prisma.TaskOccurrenceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TaskOccurrenceUpdateToOneWithWhereWithoutContinuationOfInput, Prisma.TaskOccurrenceUpdateWithoutContinuationOfInput>, Prisma.TaskOccurrenceUncheckedUpdateWithoutContinuationOfInput>
+}
+
+export type TaskOccurrenceUncheckedUpdateOneWithoutContinuationOfNestedInput = {
+  create?: Prisma.XOR<Prisma.TaskOccurrenceCreateWithoutContinuationOfInput, Prisma.TaskOccurrenceUncheckedCreateWithoutContinuationOfInput>
+  connectOrCreate?: Prisma.TaskOccurrenceCreateOrConnectWithoutContinuationOfInput
+  upsert?: Prisma.TaskOccurrenceUpsertWithoutContinuationOfInput
+  disconnect?: Prisma.TaskOccurrenceWhereInput | boolean
+  delete?: Prisma.TaskOccurrenceWhereInput | boolean
+  connect?: Prisma.TaskOccurrenceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TaskOccurrenceUpdateToOneWithWhereWithoutContinuationOfInput, Prisma.TaskOccurrenceUpdateWithoutContinuationOfInput>, Prisma.TaskOccurrenceUncheckedUpdateWithoutContinuationOfInput>
 }
 
 export type TaskOccurrenceCreateWithoutResponsibleUserInput = {
@@ -740,12 +824,15 @@ export type TaskOccurrenceCreateWithoutResponsibleUserInput = {
   updatedAt?: Date | string
   task: Prisma.TaskCreateNestedOneWithoutOccurrencesInput
   executedByUser?: Prisma.UserCreateNestedOneWithoutExecutedOccurrencesInput
+  continuationOf?: Prisma.TaskOccurrenceCreateNestedOneWithoutContinuedByInput
+  continuedBy?: Prisma.TaskOccurrenceCreateNestedOneWithoutContinuationOfInput
 }
 
 export type TaskOccurrenceUncheckedCreateWithoutResponsibleUserInput = {
   id?: string
   taskId: string
   executedByUserId?: string | null
+  continuationOfId?: string | null
   originalDate: Date | string
   scheduledDate: Date | string
   scheduledTime?: string | null
@@ -757,6 +844,7 @@ export type TaskOccurrenceUncheckedCreateWithoutResponsibleUserInput = {
   notes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  continuedBy?: Prisma.TaskOccurrenceUncheckedCreateNestedOneWithoutContinuationOfInput
 }
 
 export type TaskOccurrenceCreateOrConnectWithoutResponsibleUserInput = {
@@ -784,12 +872,15 @@ export type TaskOccurrenceCreateWithoutExecutedByUserInput = {
   updatedAt?: Date | string
   task: Prisma.TaskCreateNestedOneWithoutOccurrencesInput
   responsibleUser?: Prisma.UserCreateNestedOneWithoutTaskOccurrencesInput
+  continuationOf?: Prisma.TaskOccurrenceCreateNestedOneWithoutContinuedByInput
+  continuedBy?: Prisma.TaskOccurrenceCreateNestedOneWithoutContinuationOfInput
 }
 
 export type TaskOccurrenceUncheckedCreateWithoutExecutedByUserInput = {
   id?: string
   taskId: string
   responsibleUserId?: string | null
+  continuationOfId?: string | null
   originalDate: Date | string
   scheduledDate: Date | string
   scheduledTime?: string | null
@@ -801,6 +892,7 @@ export type TaskOccurrenceUncheckedCreateWithoutExecutedByUserInput = {
   notes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  continuedBy?: Prisma.TaskOccurrenceUncheckedCreateNestedOneWithoutContinuationOfInput
 }
 
 export type TaskOccurrenceCreateOrConnectWithoutExecutedByUserInput = {
@@ -837,6 +929,7 @@ export type TaskOccurrenceScalarWhereInput = {
   taskId?: Prisma.UuidFilter<"TaskOccurrence"> | string
   responsibleUserId?: Prisma.UuidNullableFilter<"TaskOccurrence"> | string | null
   executedByUserId?: Prisma.UuidNullableFilter<"TaskOccurrence"> | string | null
+  continuationOfId?: Prisma.UuidNullableFilter<"TaskOccurrence"> | string | null
   originalDate?: Prisma.DateTimeFilter<"TaskOccurrence"> | Date | string
   scheduledDate?: Prisma.DateTimeFilter<"TaskOccurrence"> | Date | string
   scheduledTime?: Prisma.StringNullableFilter<"TaskOccurrence"> | string | null
@@ -881,12 +974,15 @@ export type TaskOccurrenceCreateWithoutTaskInput = {
   updatedAt?: Date | string
   responsibleUser?: Prisma.UserCreateNestedOneWithoutTaskOccurrencesInput
   executedByUser?: Prisma.UserCreateNestedOneWithoutExecutedOccurrencesInput
+  continuationOf?: Prisma.TaskOccurrenceCreateNestedOneWithoutContinuedByInput
+  continuedBy?: Prisma.TaskOccurrenceCreateNestedOneWithoutContinuationOfInput
 }
 
 export type TaskOccurrenceUncheckedCreateWithoutTaskInput = {
   id?: string
   responsibleUserId?: string | null
   executedByUserId?: string | null
+  continuationOfId?: string | null
   originalDate: Date | string
   scheduledDate: Date | string
   scheduledTime?: string | null
@@ -898,6 +994,7 @@ export type TaskOccurrenceUncheckedCreateWithoutTaskInput = {
   notes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  continuedBy?: Prisma.TaskOccurrenceUncheckedCreateNestedOneWithoutContinuationOfInput
 }
 
 export type TaskOccurrenceCreateOrConnectWithoutTaskInput = {
@@ -926,10 +1023,195 @@ export type TaskOccurrenceUpdateManyWithWhereWithoutTaskInput = {
   data: Prisma.XOR<Prisma.TaskOccurrenceUpdateManyMutationInput, Prisma.TaskOccurrenceUncheckedUpdateManyWithoutTaskInput>
 }
 
+export type TaskOccurrenceCreateWithoutContinuedByInput = {
+  id?: string
+  originalDate: Date | string
+  scheduledDate: Date | string
+  scheduledTime?: string | null
+  status?: $Enums.TaskOccurrenceStatus
+  result?: $Enums.TaskOccurrenceResult | null
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  actualDurationMinutes?: number | null
+  notes?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  task: Prisma.TaskCreateNestedOneWithoutOccurrencesInput
+  responsibleUser?: Prisma.UserCreateNestedOneWithoutTaskOccurrencesInput
+  executedByUser?: Prisma.UserCreateNestedOneWithoutExecutedOccurrencesInput
+  continuationOf?: Prisma.TaskOccurrenceCreateNestedOneWithoutContinuedByInput
+}
+
+export type TaskOccurrenceUncheckedCreateWithoutContinuedByInput = {
+  id?: string
+  taskId: string
+  responsibleUserId?: string | null
+  executedByUserId?: string | null
+  continuationOfId?: string | null
+  originalDate: Date | string
+  scheduledDate: Date | string
+  scheduledTime?: string | null
+  status?: $Enums.TaskOccurrenceStatus
+  result?: $Enums.TaskOccurrenceResult | null
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  actualDurationMinutes?: number | null
+  notes?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type TaskOccurrenceCreateOrConnectWithoutContinuedByInput = {
+  where: Prisma.TaskOccurrenceWhereUniqueInput
+  create: Prisma.XOR<Prisma.TaskOccurrenceCreateWithoutContinuedByInput, Prisma.TaskOccurrenceUncheckedCreateWithoutContinuedByInput>
+}
+
+export type TaskOccurrenceCreateWithoutContinuationOfInput = {
+  id?: string
+  originalDate: Date | string
+  scheduledDate: Date | string
+  scheduledTime?: string | null
+  status?: $Enums.TaskOccurrenceStatus
+  result?: $Enums.TaskOccurrenceResult | null
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  actualDurationMinutes?: number | null
+  notes?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  task: Prisma.TaskCreateNestedOneWithoutOccurrencesInput
+  responsibleUser?: Prisma.UserCreateNestedOneWithoutTaskOccurrencesInput
+  executedByUser?: Prisma.UserCreateNestedOneWithoutExecutedOccurrencesInput
+  continuedBy?: Prisma.TaskOccurrenceCreateNestedOneWithoutContinuationOfInput
+}
+
+export type TaskOccurrenceUncheckedCreateWithoutContinuationOfInput = {
+  id?: string
+  taskId: string
+  responsibleUserId?: string | null
+  executedByUserId?: string | null
+  originalDate: Date | string
+  scheduledDate: Date | string
+  scheduledTime?: string | null
+  status?: $Enums.TaskOccurrenceStatus
+  result?: $Enums.TaskOccurrenceResult | null
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  actualDurationMinutes?: number | null
+  notes?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  continuedBy?: Prisma.TaskOccurrenceUncheckedCreateNestedOneWithoutContinuationOfInput
+}
+
+export type TaskOccurrenceCreateOrConnectWithoutContinuationOfInput = {
+  where: Prisma.TaskOccurrenceWhereUniqueInput
+  create: Prisma.XOR<Prisma.TaskOccurrenceCreateWithoutContinuationOfInput, Prisma.TaskOccurrenceUncheckedCreateWithoutContinuationOfInput>
+}
+
+export type TaskOccurrenceUpsertWithoutContinuedByInput = {
+  update: Prisma.XOR<Prisma.TaskOccurrenceUpdateWithoutContinuedByInput, Prisma.TaskOccurrenceUncheckedUpdateWithoutContinuedByInput>
+  create: Prisma.XOR<Prisma.TaskOccurrenceCreateWithoutContinuedByInput, Prisma.TaskOccurrenceUncheckedCreateWithoutContinuedByInput>
+  where?: Prisma.TaskOccurrenceWhereInput
+}
+
+export type TaskOccurrenceUpdateToOneWithWhereWithoutContinuedByInput = {
+  where?: Prisma.TaskOccurrenceWhereInput
+  data: Prisma.XOR<Prisma.TaskOccurrenceUpdateWithoutContinuedByInput, Prisma.TaskOccurrenceUncheckedUpdateWithoutContinuedByInput>
+}
+
+export type TaskOccurrenceUpdateWithoutContinuedByInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  originalDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumTaskOccurrenceStatusFieldUpdateOperationsInput | $Enums.TaskOccurrenceStatus
+  result?: Prisma.NullableEnumTaskOccurrenceResultFieldUpdateOperationsInput | $Enums.TaskOccurrenceResult | null
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  actualDurationMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  task?: Prisma.TaskUpdateOneRequiredWithoutOccurrencesNestedInput
+  responsibleUser?: Prisma.UserUpdateOneWithoutTaskOccurrencesNestedInput
+  executedByUser?: Prisma.UserUpdateOneWithoutExecutedOccurrencesNestedInput
+  continuationOf?: Prisma.TaskOccurrenceUpdateOneWithoutContinuedByNestedInput
+}
+
+export type TaskOccurrenceUncheckedUpdateWithoutContinuedByInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  taskId?: Prisma.StringFieldUpdateOperationsInput | string
+  responsibleUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  executedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  continuationOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  originalDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumTaskOccurrenceStatusFieldUpdateOperationsInput | $Enums.TaskOccurrenceStatus
+  result?: Prisma.NullableEnumTaskOccurrenceResultFieldUpdateOperationsInput | $Enums.TaskOccurrenceResult | null
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  actualDurationMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type TaskOccurrenceUpsertWithoutContinuationOfInput = {
+  update: Prisma.XOR<Prisma.TaskOccurrenceUpdateWithoutContinuationOfInput, Prisma.TaskOccurrenceUncheckedUpdateWithoutContinuationOfInput>
+  create: Prisma.XOR<Prisma.TaskOccurrenceCreateWithoutContinuationOfInput, Prisma.TaskOccurrenceUncheckedCreateWithoutContinuationOfInput>
+  where?: Prisma.TaskOccurrenceWhereInput
+}
+
+export type TaskOccurrenceUpdateToOneWithWhereWithoutContinuationOfInput = {
+  where?: Prisma.TaskOccurrenceWhereInput
+  data: Prisma.XOR<Prisma.TaskOccurrenceUpdateWithoutContinuationOfInput, Prisma.TaskOccurrenceUncheckedUpdateWithoutContinuationOfInput>
+}
+
+export type TaskOccurrenceUpdateWithoutContinuationOfInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  originalDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumTaskOccurrenceStatusFieldUpdateOperationsInput | $Enums.TaskOccurrenceStatus
+  result?: Prisma.NullableEnumTaskOccurrenceResultFieldUpdateOperationsInput | $Enums.TaskOccurrenceResult | null
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  actualDurationMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  task?: Prisma.TaskUpdateOneRequiredWithoutOccurrencesNestedInput
+  responsibleUser?: Prisma.UserUpdateOneWithoutTaskOccurrencesNestedInput
+  executedByUser?: Prisma.UserUpdateOneWithoutExecutedOccurrencesNestedInput
+  continuedBy?: Prisma.TaskOccurrenceUpdateOneWithoutContinuationOfNestedInput
+}
+
+export type TaskOccurrenceUncheckedUpdateWithoutContinuationOfInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  taskId?: Prisma.StringFieldUpdateOperationsInput | string
+  responsibleUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  executedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  originalDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumTaskOccurrenceStatusFieldUpdateOperationsInput | $Enums.TaskOccurrenceStatus
+  result?: Prisma.NullableEnumTaskOccurrenceResultFieldUpdateOperationsInput | $Enums.TaskOccurrenceResult | null
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  actualDurationMinutes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  continuedBy?: Prisma.TaskOccurrenceUncheckedUpdateOneWithoutContinuationOfNestedInput
+}
+
 export type TaskOccurrenceCreateManyResponsibleUserInput = {
   id?: string
   taskId: string
   executedByUserId?: string | null
+  continuationOfId?: string | null
   originalDate: Date | string
   scheduledDate: Date | string
   scheduledTime?: string | null
@@ -947,6 +1229,7 @@ export type TaskOccurrenceCreateManyExecutedByUserInput = {
   id?: string
   taskId: string
   responsibleUserId?: string | null
+  continuationOfId?: string | null
   originalDate: Date | string
   scheduledDate: Date | string
   scheduledTime?: string | null
@@ -975,12 +1258,15 @@ export type TaskOccurrenceUpdateWithoutResponsibleUserInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   task?: Prisma.TaskUpdateOneRequiredWithoutOccurrencesNestedInput
   executedByUser?: Prisma.UserUpdateOneWithoutExecutedOccurrencesNestedInput
+  continuationOf?: Prisma.TaskOccurrenceUpdateOneWithoutContinuedByNestedInput
+  continuedBy?: Prisma.TaskOccurrenceUpdateOneWithoutContinuationOfNestedInput
 }
 
 export type TaskOccurrenceUncheckedUpdateWithoutResponsibleUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   taskId?: Prisma.StringFieldUpdateOperationsInput | string
   executedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  continuationOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -992,12 +1278,14 @@ export type TaskOccurrenceUncheckedUpdateWithoutResponsibleUserInput = {
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  continuedBy?: Prisma.TaskOccurrenceUncheckedUpdateOneWithoutContinuationOfNestedInput
 }
 
 export type TaskOccurrenceUncheckedUpdateManyWithoutResponsibleUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   taskId?: Prisma.StringFieldUpdateOperationsInput | string
   executedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  continuationOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1026,12 +1314,15 @@ export type TaskOccurrenceUpdateWithoutExecutedByUserInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   task?: Prisma.TaskUpdateOneRequiredWithoutOccurrencesNestedInput
   responsibleUser?: Prisma.UserUpdateOneWithoutTaskOccurrencesNestedInput
+  continuationOf?: Prisma.TaskOccurrenceUpdateOneWithoutContinuedByNestedInput
+  continuedBy?: Prisma.TaskOccurrenceUpdateOneWithoutContinuationOfNestedInput
 }
 
 export type TaskOccurrenceUncheckedUpdateWithoutExecutedByUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   taskId?: Prisma.StringFieldUpdateOperationsInput | string
   responsibleUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  continuationOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1043,12 +1334,14 @@ export type TaskOccurrenceUncheckedUpdateWithoutExecutedByUserInput = {
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  continuedBy?: Prisma.TaskOccurrenceUncheckedUpdateOneWithoutContinuationOfNestedInput
 }
 
 export type TaskOccurrenceUncheckedUpdateManyWithoutExecutedByUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   taskId?: Prisma.StringFieldUpdateOperationsInput | string
   responsibleUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  continuationOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1066,6 +1359,7 @@ export type TaskOccurrenceCreateManyTaskInput = {
   id?: string
   responsibleUserId?: string | null
   executedByUserId?: string | null
+  continuationOfId?: string | null
   originalDate: Date | string
   scheduledDate: Date | string
   scheduledTime?: string | null
@@ -1094,12 +1388,15 @@ export type TaskOccurrenceUpdateWithoutTaskInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   responsibleUser?: Prisma.UserUpdateOneWithoutTaskOccurrencesNestedInput
   executedByUser?: Prisma.UserUpdateOneWithoutExecutedOccurrencesNestedInput
+  continuationOf?: Prisma.TaskOccurrenceUpdateOneWithoutContinuedByNestedInput
+  continuedBy?: Prisma.TaskOccurrenceUpdateOneWithoutContinuationOfNestedInput
 }
 
 export type TaskOccurrenceUncheckedUpdateWithoutTaskInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   responsibleUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   executedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  continuationOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1111,12 +1408,14 @@ export type TaskOccurrenceUncheckedUpdateWithoutTaskInput = {
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  continuedBy?: Prisma.TaskOccurrenceUncheckedUpdateOneWithoutContinuationOfNestedInput
 }
 
 export type TaskOccurrenceUncheckedUpdateManyWithoutTaskInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   responsibleUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   executedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  continuationOfId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   originalDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1137,6 +1436,7 @@ export type TaskOccurrenceSelect<ExtArgs extends runtime.Types.Extensions.Intern
   taskId?: boolean
   responsibleUserId?: boolean
   executedByUserId?: boolean
+  continuationOfId?: boolean
   originalDate?: boolean
   scheduledDate?: boolean
   scheduledTime?: boolean
@@ -1151,6 +1451,8 @@ export type TaskOccurrenceSelect<ExtArgs extends runtime.Types.Extensions.Intern
   task?: boolean | Prisma.TaskDefaultArgs<ExtArgs>
   responsibleUser?: boolean | Prisma.TaskOccurrence$responsibleUserArgs<ExtArgs>
   executedByUser?: boolean | Prisma.TaskOccurrence$executedByUserArgs<ExtArgs>
+  continuationOf?: boolean | Prisma.TaskOccurrence$continuationOfArgs<ExtArgs>
+  continuedBy?: boolean | Prisma.TaskOccurrence$continuedByArgs<ExtArgs>
 }, ExtArgs["result"]["taskOccurrence"]>
 
 export type TaskOccurrenceSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1158,6 +1460,7 @@ export type TaskOccurrenceSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   taskId?: boolean
   responsibleUserId?: boolean
   executedByUserId?: boolean
+  continuationOfId?: boolean
   originalDate?: boolean
   scheduledDate?: boolean
   scheduledTime?: boolean
@@ -1172,6 +1475,7 @@ export type TaskOccurrenceSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   task?: boolean | Prisma.TaskDefaultArgs<ExtArgs>
   responsibleUser?: boolean | Prisma.TaskOccurrence$responsibleUserArgs<ExtArgs>
   executedByUser?: boolean | Prisma.TaskOccurrence$executedByUserArgs<ExtArgs>
+  continuationOf?: boolean | Prisma.TaskOccurrence$continuationOfArgs<ExtArgs>
 }, ExtArgs["result"]["taskOccurrence"]>
 
 export type TaskOccurrenceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1179,6 +1483,7 @@ export type TaskOccurrenceSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   taskId?: boolean
   responsibleUserId?: boolean
   executedByUserId?: boolean
+  continuationOfId?: boolean
   originalDate?: boolean
   scheduledDate?: boolean
   scheduledTime?: boolean
@@ -1193,6 +1498,7 @@ export type TaskOccurrenceSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   task?: boolean | Prisma.TaskDefaultArgs<ExtArgs>
   responsibleUser?: boolean | Prisma.TaskOccurrence$responsibleUserArgs<ExtArgs>
   executedByUser?: boolean | Prisma.TaskOccurrence$executedByUserArgs<ExtArgs>
+  continuationOf?: boolean | Prisma.TaskOccurrence$continuationOfArgs<ExtArgs>
 }, ExtArgs["result"]["taskOccurrence"]>
 
 export type TaskOccurrenceSelectScalar = {
@@ -1200,6 +1506,7 @@ export type TaskOccurrenceSelectScalar = {
   taskId?: boolean
   responsibleUserId?: boolean
   executedByUserId?: boolean
+  continuationOfId?: boolean
   originalDate?: boolean
   scheduledDate?: boolean
   scheduledTime?: boolean
@@ -1213,21 +1520,25 @@ export type TaskOccurrenceSelectScalar = {
   updatedAt?: boolean
 }
 
-export type TaskOccurrenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "taskId" | "responsibleUserId" | "executedByUserId" | "originalDate" | "scheduledDate" | "scheduledTime" | "status" | "result" | "startedAt" | "completedAt" | "actualDurationMinutes" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["taskOccurrence"]>
+export type TaskOccurrenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "taskId" | "responsibleUserId" | "executedByUserId" | "continuationOfId" | "originalDate" | "scheduledDate" | "scheduledTime" | "status" | "result" | "startedAt" | "completedAt" | "actualDurationMinutes" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["taskOccurrence"]>
 export type TaskOccurrenceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   task?: boolean | Prisma.TaskDefaultArgs<ExtArgs>
   responsibleUser?: boolean | Prisma.TaskOccurrence$responsibleUserArgs<ExtArgs>
   executedByUser?: boolean | Prisma.TaskOccurrence$executedByUserArgs<ExtArgs>
+  continuationOf?: boolean | Prisma.TaskOccurrence$continuationOfArgs<ExtArgs>
+  continuedBy?: boolean | Prisma.TaskOccurrence$continuedByArgs<ExtArgs>
 }
 export type TaskOccurrenceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   task?: boolean | Prisma.TaskDefaultArgs<ExtArgs>
   responsibleUser?: boolean | Prisma.TaskOccurrence$responsibleUserArgs<ExtArgs>
   executedByUser?: boolean | Prisma.TaskOccurrence$executedByUserArgs<ExtArgs>
+  continuationOf?: boolean | Prisma.TaskOccurrence$continuationOfArgs<ExtArgs>
 }
 export type TaskOccurrenceIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   task?: boolean | Prisma.TaskDefaultArgs<ExtArgs>
   responsibleUser?: boolean | Prisma.TaskOccurrence$responsibleUserArgs<ExtArgs>
   executedByUser?: boolean | Prisma.TaskOccurrence$executedByUserArgs<ExtArgs>
+  continuationOf?: boolean | Prisma.TaskOccurrence$continuationOfArgs<ExtArgs>
 }
 
 export type $TaskOccurrencePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1236,12 +1547,15 @@ export type $TaskOccurrencePayload<ExtArgs extends runtime.Types.Extensions.Inte
     task: Prisma.$TaskPayload<ExtArgs>
     responsibleUser: Prisma.$UserPayload<ExtArgs> | null
     executedByUser: Prisma.$UserPayload<ExtArgs> | null
+    continuationOf: Prisma.$TaskOccurrencePayload<ExtArgs> | null
+    continuedBy: Prisma.$TaskOccurrencePayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     taskId: string
     responsibleUserId: string | null
     executedByUserId: string | null
+    continuationOfId: string | null
     originalDate: Date
     scheduledDate: Date
     scheduledTime: string | null
@@ -1650,6 +1964,8 @@ export interface Prisma__TaskOccurrenceClient<T, Null = never, ExtArgs extends r
   task<T extends Prisma.TaskDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TaskDefaultArgs<ExtArgs>>): Prisma.Prisma__TaskClient<runtime.Types.Result.GetResult<Prisma.$TaskPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   responsibleUser<T extends Prisma.TaskOccurrence$responsibleUserArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TaskOccurrence$responsibleUserArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   executedByUser<T extends Prisma.TaskOccurrence$executedByUserArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TaskOccurrence$executedByUserArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  continuationOf<T extends Prisma.TaskOccurrence$continuationOfArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TaskOccurrence$continuationOfArgs<ExtArgs>>): Prisma.Prisma__TaskOccurrenceClient<runtime.Types.Result.GetResult<Prisma.$TaskOccurrencePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  continuedBy<T extends Prisma.TaskOccurrence$continuedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TaskOccurrence$continuedByArgs<ExtArgs>>): Prisma.Prisma__TaskOccurrenceClient<runtime.Types.Result.GetResult<Prisma.$TaskOccurrencePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1683,6 +1999,7 @@ export interface TaskOccurrenceFieldRefs {
   readonly taskId: Prisma.FieldRef<"TaskOccurrence", 'String'>
   readonly responsibleUserId: Prisma.FieldRef<"TaskOccurrence", 'String'>
   readonly executedByUserId: Prisma.FieldRef<"TaskOccurrence", 'String'>
+  readonly continuationOfId: Prisma.FieldRef<"TaskOccurrence", 'String'>
   readonly originalDate: Prisma.FieldRef<"TaskOccurrence", 'DateTime'>
   readonly scheduledDate: Prisma.FieldRef<"TaskOccurrence", 'DateTime'>
   readonly scheduledTime: Prisma.FieldRef<"TaskOccurrence", 'String'>
@@ -2130,6 +2447,44 @@ export type TaskOccurrence$executedByUserArgs<ExtArgs extends runtime.Types.Exte
    */
   include?: Prisma.UserInclude<ExtArgs> | null
   where?: Prisma.UserWhereInput
+}
+
+/**
+ * TaskOccurrence.continuationOf
+ */
+export type TaskOccurrence$continuationOfArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TaskOccurrence
+   */
+  select?: Prisma.TaskOccurrenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TaskOccurrence
+   */
+  omit?: Prisma.TaskOccurrenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TaskOccurrenceInclude<ExtArgs> | null
+  where?: Prisma.TaskOccurrenceWhereInput
+}
+
+/**
+ * TaskOccurrence.continuedBy
+ */
+export type TaskOccurrence$continuedByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TaskOccurrence
+   */
+  select?: Prisma.TaskOccurrenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TaskOccurrence
+   */
+  omit?: Prisma.TaskOccurrenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TaskOccurrenceInclude<ExtArgs> | null
+  where?: Prisma.TaskOccurrenceWhereInput
 }
 
 /**

@@ -9,10 +9,11 @@ import {
   TaskOccurrenceResult,
   TaskOccurrenceStatus,
 } from '../../generated/prisma/client';
-import type { Prisma } from '../../generated/prisma/client';
+import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { CompleteOccurrenceDto } from './dto/complete-occurrence.dto';
+import { ContinueOccurrenceDto } from './dto/continue-occurrence.dto';
 import { ListOccurrencesQueryDto } from './dto/list-occurrences-query.dto';
 import { RescheduleOccurrenceDto } from './dto/reschedule-occurrence.dto';
 import { CalendarQueryDto } from './dto/calendar-query.dto';
@@ -41,6 +42,12 @@ const occurrenceRelations = {
   },
   executedByUser: {
     select: { id: true, name: true, email: true, active: true },
+  },
+  continuationOf: {
+    select: { id: true, scheduledDate: true, status: true },
+  },
+  continuedBy: {
+    select: { id: true, scheduledDate: true, status: true },
   },
 } satisfies Prisma.TaskOccurrenceInclude;
 
@@ -304,6 +311,125 @@ export class TaskOccurrencesService {
     }
 
     await this.auditOperation(occurrence, user, `OCCURRENCE_${dto.result}`);
+
+    return this.findOne(id, user);
+  }
+
+  async continueTomorrow(
+    id: string,
+    dto: ContinueOccurrenceDto,
+    user: JwtPayload,
+  ) {
+    const occurrence = await this.findForOperation(id);
+
+    if (
+      occurrence.status !== TaskOccurrenceStatus.IN_PROGRESS &&
+      occurrence.status !== TaskOccurrenceStatus.PENDING
+    ) {
+      throw new BadRequestException(
+        'A ocorrência não pode ser continuada no status atual.',
+      );
+    }
+
+    if (occurrence.status === TaskOccurrenceStatus.PENDING) {
+      await this.assertCanOperate(occurrence, user);
+    } else if (
+      !this.isAdmin(user) &&
+      occurrence.executedByUserId !== user.sub
+    ) {
+      throw new ForbiddenException(
+        'Somente o executor registrado pode continuar uma ocorrência já iniciada.',
+      );
+    }
+
+    const tomorrow = new Date(occurrence.scheduledDate);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    const now = new Date();
+
+    try {
+      await this.prisma.$transaction(async (transaction) => {
+        const conflict = await transaction.taskOccurrence.findFirst({
+          where: {
+            taskId: occurrence.taskId,
+            OR: [{ scheduledDate: tomorrow }, { originalDate: tomorrow }],
+          },
+          select: { id: true },
+        });
+
+        if (conflict) {
+          throw new ConflictException(
+            'Já existe uma ocorrência desta tarefa agendada para o dia seguinte.',
+          );
+        }
+
+        const updated = await transaction.taskOccurrence.updateMany({
+          where: {
+            id,
+            status: occurrence.status,
+            ...(occurrence.status === TaskOccurrenceStatus.IN_PROGRESS &&
+            !this.isAdmin(user)
+              ? { executedByUserId: user.sub }
+              : {}),
+          },
+          data: {
+            status: TaskOccurrenceStatus.COMPLETED,
+            result: TaskOccurrenceResult.PARTIAL,
+            completedAt: now,
+            actualDurationMinutes: dto.actualDurationMinutes,
+            notes: dto.notes?.trim() || null,
+            ...(occurrence.status === TaskOccurrenceStatus.PENDING
+              ? { startedAt: now, executedByUserId: user.sub }
+              : {}),
+          },
+        });
+
+        if (updated.count !== 1) {
+          throw new ConflictException(
+            'A ocorrência foi alterada por outro usuário. Atualize a agenda e tente novamente.',
+          );
+        }
+
+        const continuation = await transaction.taskOccurrence.create({
+          data: {
+            taskId: occurrence.taskId,
+            responsibleUserId: occurrence.responsibleUserId,
+            originalDate: tomorrow,
+            scheduledDate: tomorrow,
+            scheduledTime: occurrence.scheduledTime,
+            status: TaskOccurrenceStatus.PENDING,
+            continuationOfId: id,
+          },
+          select: { id: true },
+        });
+
+        await transaction.auditLog.create({
+          data: {
+            actorUserId: user.sub,
+            action: 'TASK_OCCURRENCE_CONTINUED',
+            entityType: 'TaskOccurrence',
+            entityId: id,
+            metadata: {
+              continuationOccurrenceId: continuation.id,
+              scheduledDate: tomorrow.toISOString().slice(0, 10),
+              actualDurationMinutes: dto.actualDurationMinutes ?? null,
+            },
+          },
+        });
+      });
+    } catch (error) {
+      if (
+        error instanceof ConflictException ||
+        (error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002')
+      ) {
+        throw error instanceof ConflictException
+          ? error
+          : new ConflictException(
+              'Já existe uma ocorrência desta tarefa agendada para o dia seguinte.',
+            );
+      }
+      throw error;
+    }
 
     return this.findOne(id, user);
   }

@@ -141,6 +141,33 @@ export class RolesService {
     });
   }
 
+  async hardDelete(id: string, actorUserId: string) {
+    const role = await this.findOne(id);
+    const linkedUsers = await this.prisma.user.count({
+      where: { roleId: id },
+    });
+
+    if (linkedUsers > 0) {
+      throw new ConflictException(
+        `O perfil não pode ser excluído definitivamente porque possui ${linkedUsers} usuário(s) vinculado(s).`,
+      );
+    }
+
+    return this.prisma.$transaction(async (transaction) => {
+      await transaction.role.delete({ where: { id } });
+      await transaction.auditLog.create({
+        data: {
+          actorUserId,
+          action: 'ROLE_HARD_DELETED',
+          entityType: 'Role',
+          entityId: id,
+          metadata: { name: role.name, accessLevel: role.accessLevel },
+        },
+      });
+      return { id };
+    });
+  }
+
   private async ensureNameIsAvailable(
     name: string,
     ignoredRoleId?: string,

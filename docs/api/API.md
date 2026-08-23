@@ -1024,6 +1024,23 @@ active = false
 
 ---
 
+# Exclusão definitiva de cadastros
+
+Além da inativação existente, administradores podem remover fisicamente os seguintes cadastros:
+
+```text
+DELETE /api/tasks/:id/permanent
+DELETE /api/functions/:id/permanent
+DELETE /api/periodicities/:id/permanent
+DELETE /api/positions/:id/permanent
+DELETE /api/users/:id/permanent
+DELETE /api/roles/:id/permanent
+```
+
+Funções e periodicidades com tarefas, cargos com usuários/funções/tarefas, perfis com usuários e usuários com vínculos operacionais retornam `409 Conflict` com a quantidade de vínculos. O usuário autenticado não pode excluir a si próprio. Na exclusão de uma tarefa, todas as ocorrências são excluídas na mesma transação e a resposta informa `occurrencesDeleted`. Toda exclusão definitiva gera registro de auditoria.
+
+---
+
 # 20. Ocorrências de tarefas
 
 Base:
@@ -1323,6 +1340,23 @@ Também é permitido:
   "notes": "Execução concluída parcialmente."
 }
 ```
+
+---
+
+# Continuar ocorrência amanhã
+
+## `PATCH /api/task-occurrences/:id/continue-tomorrow`
+
+Disponível para ocorrências `PENDING` ou `IN_PROGRESS`, seguindo as mesmas permissões da conclusão. O body aceita a duração e as observações:
+
+```json
+{
+  "actualDurationMinutes": 35,
+  "notes": "Retomar a execução amanhã."
+}
+```
+
+A operação é atômica: conclui a ocorrência atual com `status = COMPLETED` e `result = PARTIAL`, cria uma ocorrência `PENDING` no dia-calendário seguinte e preenche o vínculo `continuationOfId`. As respostas de detalhes expõem `continuationOf` e `continuedBy`. Se já existir ocorrência da mesma tarefa agendada ou originada no dia seguinte, retorna `409 Conflict`. A ação gera registro de auditoria.
 
 ---
 

@@ -137,6 +137,43 @@ export class PositionsService {
     });
   }
 
+  async hardDelete(id: string, actorUserId: string) {
+    const position = await this.findOne(id);
+    const [users, functions, tasks, inheritances] =
+      await this.prisma.$transaction([
+        this.prisma.user.count({ where: { positionId: id } }),
+        this.prisma.taskFunction.count({
+          where: { responsiblePositionId: id },
+        }),
+        this.prisma.task.count({ where: { responsiblePositionId: id } }),
+        this.prisma.positionInheritance.count({
+          where: {
+            OR: [{ positionId: id }, { inheritedPositionId: id }],
+          },
+        }),
+      ]);
+
+    if (users + functions + tasks + inheritances > 0) {
+      throw new ConflictException(
+        `O cargo não pode ser excluído definitivamente porque possui vínculos: ${users} usuário(s), ${functions} função(ões), ${tasks} tarefa(s) e ${inheritances} herança(s).`,
+      );
+    }
+
+    return this.prisma.$transaction(async (transaction) => {
+      await transaction.position.delete({ where: { id } });
+      await transaction.auditLog.create({
+        data: {
+          actorUserId,
+          action: 'POSITION_HARD_DELETED',
+          entityType: 'Position',
+          entityId: id,
+          metadata: { name: position.name },
+        },
+      });
+      return { id };
+    });
+  }
+
   private async ensureNameIsAvailable(
     name: string,
     ignoredPositionId?: string,

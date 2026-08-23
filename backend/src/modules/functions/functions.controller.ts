@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -23,6 +24,7 @@ import {
 import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import type { AuthenticatedRequest } from '../auth/guards/jwt-auth.guard';
 import { CreateFunctionDto } from './dto/create-function.dto';
 import { ListFunctionsQueryDto } from './dto/list-functions-query.dto';
 import { UpdateFunctionDto } from './dto/update-function.dto';
@@ -87,5 +89,16 @@ export class FunctionsController {
   })
   deactivate(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.functionsService.deactivate(id);
+  }
+
+  @Delete(':id/permanent')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Excluir definitivamente uma função' })
+  @ApiConflictResponse({ description: 'A função possui tarefas vinculadas.' })
+  hardDelete(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.functionsService.hardDelete(id, request.user!.sub);
   }
 }

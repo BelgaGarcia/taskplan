@@ -1,4 +1,5 @@
-import { ForbiddenException } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return */
+import { ConflictException, ForbiddenException } from '@nestjs/common';
 import { TaskOccurrenceStatus } from '../../generated/prisma/client';
 import type { Prisma } from '../../generated/prisma/client';
 import { TaskOccurrencesService } from './task-occurrences.service';
@@ -9,6 +10,7 @@ const occurrence = (overrides: Record<string, unknown> = {}) => ({
   status: TaskOccurrenceStatus.PENDING,
   originalDate: new Date('2026-08-17T00:00:00.000Z'),
   scheduledDate: new Date('2026-08-17T00:00:00.000Z'),
+  scheduledTime: '09:00',
   responsibleUserId: 'operator-1',
   executedByUserId: null,
   task: {
@@ -145,6 +147,112 @@ describe('TaskOccurrencesService', () => {
 
     await expect(
       service.complete('occurrence', { result: 'SUCCESS' }, operator),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('finishes partially, links a pending occurrence for tomorrow and audits the action', async () => {
+    const transaction = {
+      taskOccurrence: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        create: jest.fn().mockResolvedValue({ id: 'continuation' }),
+      },
+      auditLog: { create: jest.fn().mockResolvedValue({ id: 'audit' }) },
+    };
+    const findUnique = jest
+      .fn()
+      .mockResolvedValueOnce(occurrence())
+      .mockResolvedValueOnce(
+        occurrence({
+          status: TaskOccurrenceStatus.COMPLETED,
+          continuedBy: {
+            id: 'continuation',
+            scheduledDate: new Date('2026-08-18T00:00:00.000Z'),
+            status: TaskOccurrenceStatus.PENDING,
+          },
+        }),
+      );
+    const service = new TaskOccurrencesService(
+      {
+        taskOccurrence: { findUnique },
+        $transaction: jest.fn((callback) => callback(transaction)),
+      } as never,
+      { getInheritedPositionIds: jest.fn().mockResolvedValue([]) } as never,
+    );
+
+    await service.continueTomorrow(
+      'occurrence',
+      { actualDurationMinutes: 35, notes: 'Retomar amanhã' },
+      operator,
+    );
+
+    expect(transaction.taskOccurrence.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: TaskOccurrenceStatus.COMPLETED,
+          result: 'PARTIAL',
+          actualDurationMinutes: 35,
+        }),
+      }),
+    );
+    expect(transaction.taskOccurrence.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        taskId: 'task-1',
+        originalDate: new Date('2026-08-18T00:00:00.000Z'),
+        scheduledDate: new Date('2026-08-18T00:00:00.000Z'),
+        status: TaskOccurrenceStatus.PENDING,
+        continuationOfId: 'occurrence',
+      }),
+      select: { id: true },
+    });
+    expect(transaction.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        actorUserId: 'operator-1',
+        action: 'TASK_OCCURRENCE_CONTINUED',
+      }),
+    });
+  });
+
+  it('rejects continuation when the task already has an occurrence tomorrow', async () => {
+    const transaction = {
+      taskOccurrence: {
+        findFirst: jest.fn().mockResolvedValue({ id: 'existing' }),
+        updateMany: jest.fn(),
+      },
+    };
+    const service = new TaskOccurrencesService(
+      {
+        taskOccurrence: {
+          findUnique: jest.fn().mockResolvedValue(occurrence()),
+        },
+        $transaction: jest.fn((callback) => callback(transaction)),
+      } as never,
+      { getInheritedPositionIds: jest.fn().mockResolvedValue([]) } as never,
+    );
+
+    await expect(
+      service.continueTomorrow('occurrence', {}, operator),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(transaction.taskOccurrence.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('only lets the recorded executor continue an in-progress occurrence', async () => {
+    const service = new TaskOccurrencesService(
+      {
+        taskOccurrence: {
+          findUnique: jest.fn().mockResolvedValue(
+            occurrence({
+              status: TaskOccurrenceStatus.IN_PROGRESS,
+              executedByUserId: 'another-user',
+            }),
+          ),
+        },
+      } as never,
+      { getInheritedPositionIds: jest.fn().mockResolvedValue([]) } as never,
+    );
+
+    await expect(
+      service.continueTomorrow('occurrence', {}, operator),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 

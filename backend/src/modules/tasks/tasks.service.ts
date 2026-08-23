@@ -217,6 +217,28 @@ export class TasksService {
     });
   }
 
+  async hardDelete(id: string, actorUserId: string) {
+    const task = await this.findExisting(id);
+
+    return this.prisma.$transaction(async (transaction) => {
+      const occurrences = await transaction.taskOccurrence.deleteMany({
+        where: { taskId: id },
+      });
+      await transaction.task.delete({ where: { id } });
+      await transaction.auditLog.create({
+        data: {
+          actorUserId,
+          action: 'TASK_HARD_DELETED',
+          entityType: 'Task',
+          entityId: id,
+          metadata: { name: task.name, occurrencesDeleted: occurrences.count },
+        },
+      });
+
+      return { id, occurrencesDeleted: occurrences.count };
+    });
+  }
+
   private async validateRelations(
     dto: Partial<CreateTaskDto> | UpdateTaskDto,
   ): Promise<void> {

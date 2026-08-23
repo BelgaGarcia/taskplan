@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -28,6 +29,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import type { AuthenticatedRequest } from '../auth/guards/jwt-auth.guard';
 @ApiTags('Perfis de acesso')
 @Controller('roles')
 @ApiTags('Perfis de acesso')
@@ -113,5 +115,16 @@ export class RolesController {
   })
   deactivate(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.rolesService.deactivate(id);
+  }
+
+  @Delete(':id/permanent')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Excluir definitivamente um perfil de acesso' })
+  @ApiConflictResponse({ description: 'O perfil possui usuários vinculados.' })
+  hardDelete(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.rolesService.hardDelete(id, request.user!.sub);
   }
 }

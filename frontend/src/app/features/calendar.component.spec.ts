@@ -48,6 +48,7 @@ describe('CalendarComponent', () => {
       'calendar',
       'occurrenceOptions',
       'clearAgendaMonth',
+      'continueOccurrenceTomorrow',
     ]);
     api.calendar.and.returnValue(of(response));
     api.occurrenceOptions.and.returnValue(
@@ -138,5 +139,34 @@ describe('CalendarComponent', () => {
 
     expect(api.clearAgendaMonth).toHaveBeenCalledOnceWith('2026-08');
     expect(api.calendar).toHaveBeenCalledTimes(2);
+  });
+
+  it('sends duration and notes when continuing an occurrence tomorrow', () => {
+    fixture = TestBed.createComponent(CalendarComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.selected = {
+      id: 'occurrence-1',
+      taskId: 'task-1',
+      scheduledDate: '2026-08-17T00:00:00.000Z',
+      originalDate: '2026-08-17T00:00:00.000Z',
+      status: 'IN_PROGRESS',
+      overdue: false,
+      canOperate: true,
+      task: { id: 'task-1', name: 'Fechamento' },
+    } as unknown as Occurrence;
+    fixture.componentInstance.executionForm.patchValue({
+      duration: '01:15',
+      notes: 'Retomar amanhã',
+    });
+    api.continueOccurrenceTomorrow.and.returnValue(
+      of(fixture.componentInstance.selected as Occurrence),
+    );
+
+    fixture.componentInstance.continueTomorrow();
+
+    expect(api.continueOccurrenceTomorrow).toHaveBeenCalledOnceWith(
+      'occurrence-1',
+      { actualDurationMinutes: 75, notes: 'Retomar amanhã' },
+    );
   });
 });
