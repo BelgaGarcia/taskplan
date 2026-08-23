@@ -50,7 +50,12 @@ jobs:
       - run: npm run build -- --configuration production
       - run: docker build --tag taskplan-frontend:${{ github.sha }} .
       - run: npx playwright install --with-deps chromium
-      - run: docker run --detach --rm --name taskplan-frontend-ui -p 127.0.0.1:8080:8080 taskplan-frontend:${{ github.sha }}
+      - name: Start frontend with a private API smoke server
+        run: |
+          docker network create taskplan-ui
+          docker run --detach --rm --name taskplan-backend-ui --network taskplan-ui --network-alias backend node:24-alpine \
+            node -e "require('http').createServer((request, response) => { response.writeHead(request.url === '/api/health' ? 200 : 404); response.end('ok'); }).listen(3000)"
+          docker run --detach --rm --name taskplan-frontend-ui --network taskplan-ui -p 127.0.0.1:8080:8080 taskplan-frontend:${{ github.sha }}
       - run: |
           for ((attempt = 1; attempt <= 30; attempt++)); do
             if curl --fail --silent http://127.0.0.1:8080/healthz; then
@@ -60,10 +65,14 @@ jobs:
           done
           docker logs taskplan-frontend-ui
           exit 1
+      - name: Verify the same-origin API proxy
+        run: curl --fail --silent --show-error http://127.0.0.1:8080/api/health
       - run: npm run test:ui
         env: { TASKPLAN_UI_BASE_URL: http://127.0.0.1:8080 }
       - if: always()
-        run: docker stop taskplan-frontend-ui || true
+        run: |
+          docker stop taskplan-frontend-ui taskplan-backend-ui || true
+          docker network rm taskplan-ui || true
   backend:
     needs: changes
     if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.shared == 'true'

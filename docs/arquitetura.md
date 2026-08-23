@@ -37,7 +37,7 @@ Frontend e API são publicados no endereço de rede do host.
 
 | Componente | Responsabilidade | Persistência | Exposição em produção |
 | --- | --- | --- | --- |
-| `frontend` | SPA Angular, autenticação no cliente, calendário e administração | Imagem imutável; configuração gerada na inicialização | `192.168.100.15:5182` |
+| `frontend` | SPA Angular, autenticação no cliente, calendário, administração e proxy `/api` para o backend | Imagem imutável; configuração gerada na inicialização | `192.168.100.15:5182` |
 | `backend` | API NestJS, regras de negócio, autenticação, autorização e Swagger | Imagem imutável | `192.168.100.15:5183`, prefixo `/api` |
 | `postgres` | Fonte de verdade dos dados de negócio e auditoria | volume `taskplan-postgres-data` | somente `127.0.0.1:${POSTGRES_PORT}` |
 | `redis` | Sessões de refresh token e invalidação de sessões | volume AOF `taskplan-redis-data` | somente `127.0.0.1:${REDIS_PORT}` |
@@ -59,9 +59,10 @@ em `frontend/src/app/app.routes.ts`:
 - calendário, tarefas próprias e dashboard consomem a API REST.
 
 O container não recebe segredos. Na inicialização,
-`frontend/docker-entrypoint.sh` transforma `TASKPLAN_API_URL` e
-`TASKPLAN_RELEASE` em `assets/runtime-config.js`. Assim, a mesma imagem pode
-receber a URL da API e a versão da Release sem recompilar o Angular.
+`frontend/docker-entrypoint.sh` publica `TASKPLAN_RELEASE` e configura a API
+como `/api` em `assets/runtime-config.js`. O Nginx encaminha esse caminho ao
+serviço `backend` pela rede privada do Compose, mantendo a mesma origem no
+navegador mesmo quando o frontend é acessado por diferentes IPs ou DNS.
 
 ## Backend
 
@@ -250,6 +251,7 @@ sudo docker logs --tail 200 taskplan-backend
 sudo docker logs --tail 200 taskplan-frontend
 curl --fail http://192.168.100.15:5183/api/health
 curl --fail http://192.168.100.15:5182/healthz
+curl --fail http://192.168.100.15:5182/api/health
 ```
 
 ### Reaplicar uma Release existente

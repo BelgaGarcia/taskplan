@@ -91,7 +91,6 @@ services:
     container_name: taskplan-frontend
     restart: unless-stopped
     environment:
-      TASKPLAN_API_URL: ${TASKPLAN_API_URL:-http://192.168.100.15:5183/api}
       TASKPLAN_RELEASE: ${TASKPLAN_RELEASE:-local}
     ports:
       - "192.168.100.15:5182:8080"
