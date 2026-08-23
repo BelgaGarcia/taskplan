@@ -20,6 +20,8 @@ No desktop a sidebar pode ser recolhida: ficam somente os ícones e o atributo `
 
 O calendário abre em mês e oferece semana útil e semana completa. Em telas estreitas a grade é substituída pela agenda do dia selecionado, evitando rolagem horizontal da página. A grade, mini calendário, filtros e legenda continuam disponíveis no desktop.
 
+Ao lado do seletor de visualização, administradores possuem a ação **Limpar mês**. Após confirmação, ela exclui definitivamente todas as ocorrências do mês exibido, sem excluir os cadastros das tarefas. A agenda pode ser gerada novamente depois da limpeza.
+
 ## Formulários e modais
 
 Modais usam `role="dialog"` ou `role="alertdialog"`, suportam Escape, salvam o último elemento focado e devolvem foco ao fechar. No desktop são largos o bastante para formulários de duas colunas; em celulares ocupam toda a tela, com rodapé de ação visível. Campos obrigatórios e erros da API são anunciados na própria área do formulário.

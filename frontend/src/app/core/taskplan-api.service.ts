@@ -32,6 +32,7 @@ export class TaskPlanApiService {
   rescheduleOccurrence(id: string, body: { scheduledDate: string; scheduledTime?: string }): Observable<Occurrence> { return this.http.patch<Occurrence>(this.url(`task-occurrences/${id}/reschedule`), body); }
   generateAgenda(body: { from: string; to: string }): Observable<object> { return this.http.post(this.url('task-occurrences/generate'), body); }
   deleteOccurrence(id: string, scope: 'current' | 'future'): Observable<{ id: string; scope: string; removedCount: number }> { return this.http.delete<{ id: string; scope: string; removedCount: number }>(this.url(`task-occurrences/${id}`), { params: { scope } }); }
+  clearAgendaMonth(month: string): Observable<{ month: string; deleted: number }> { return this.http.delete<{ month: string; deleted: number }>(this.url('task-occurrences/month'), { params: { month } }); }
   positionHierarchy(): Observable<PositionHierarchy> { return this.fetch<PositionHierarchy>('positions/hierarchy'); }
   updatePositionHierarchy(inheritances: Array<{ positionId: string; inheritedPositionId: string }>): Observable<PositionHierarchy> { return this.http.patch<PositionHierarchy>(this.url('positions/hierarchy'), { inheritances }); }
   private url(path: string): string { return `${this.config.apiUrl}/${path}`; }

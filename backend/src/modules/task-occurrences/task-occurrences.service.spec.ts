@@ -27,7 +27,58 @@ const operator = {
   positionId: null,
 };
 
+const admin = { ...operator, sub: 'admin-1', accessLevel: 'ADMIN' as const };
+
 describe('TaskOccurrencesService', () => {
+  it('clears and audits every occurrence in the requested month for an administrator', async () => {
+    const deleteMany = jest.fn().mockResolvedValue({ count: 4 });
+    const createAudit = jest.fn().mockResolvedValue({});
+    const transaction = jest.fn((callback: (tx: never) => Promise<unknown>) =>
+      callback({
+        taskOccurrence: { deleteMany },
+        auditLog: { create: createAudit },
+      } as never),
+    );
+    const service = new TaskOccurrencesService(
+      { $transaction: transaction } as never,
+      { getInheritedPositionIds: jest.fn().mockResolvedValue([]) } as never,
+    );
+
+    await expect(service.clearMonth('2026-08', admin)).resolves.toEqual({
+      month: '2026-08',
+      deleted: 4,
+    });
+    expect(deleteMany).toHaveBeenCalledWith({
+      where: {
+        scheduledDate: {
+          gte: new Date('2026-08-01T00:00:00.000Z'),
+          lt: new Date('2026-09-01T00:00:00.000Z'),
+        },
+      },
+    });
+    expect(createAudit).toHaveBeenCalledWith({
+      data: {
+        actorUserId: 'admin-1',
+        action: 'OCCURRENCE_MONTH_CLEARED',
+        entityType: 'TaskOccurrence',
+        metadata: { month: '2026-08', deleted: 4 },
+      },
+    });
+  });
+
+  it('does not let an operator clear a month', async () => {
+    const transaction = jest.fn();
+    const service = new TaskOccurrencesService(
+      { $transaction: transaction } as never,
+      { getInheritedPositionIds: jest.fn().mockResolvedValue([]) } as never,
+    );
+
+    await expect(
+      service.clearMonth('2026-08', operator),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
   it('records the JWT user as executor when the responsible operator starts an occurrence', async () => {
     const findUnique = jest.fn().mockResolvedValue(occurrence());
     const updateMany = jest

@@ -1374,6 +1374,23 @@ O escopo opcional `future` remove a ocorrência selecionada e as posteriores da 
 
 ---
 
+## Limpar todas as ocorrências de um mês (administrador)
+
+### `DELETE /api/task-occurrences/month?month=YYYY-MM`
+
+Apenas administradores podem executar esta operação. Ela exclui definitivamente todas as ocorrências cuja data agendada pertença ao mês informado, inclusive ocorrências em andamento ou finalizadas. Os cadastros das tarefas não são excluídos e podem gerar novas ocorrências posteriormente. A operação é registrada na auditoria.
+
+Exemplo de resposta:
+
+```json
+{
+  "month": "2026-08",
+  "deleted": 42
+}
+```
+
+---
+
 # 34. Calendário
 
 ## `GET /api/task-occurrences/calendar`
