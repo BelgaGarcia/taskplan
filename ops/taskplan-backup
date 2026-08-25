@@ -1,0 +1,223 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+umask 077
+
+backup_root=/var/backups/taskplan/postgres
+state_dir=/var/lib/taskplan
+backup_status_file="$state_dir/backup-status"
+drill_status_file="$state_dir/restore-drill-status"
+lock_file=/run/lock/taskplan-maintenance.lock
+postgres_container=taskplan-postgres
+release_state_file="$state_dir/current-release"
+retention_minutes=10080
+partial_dir=''
+drill_container=''
+mode=unknown
+
+log() { printf '%s %s\n' "$(date --utc +%FT%TZ)" "$*"; }
+die() { log "ERROR: $*" >&2; return 1; }
+
+write_status() {
+  local destination=$1
+  shift
+  local temporary
+  temporary="$(mktemp "$state_dir/.$(basename "$destination").XXXXXX")"
+  printf '%s\n' "$@" > "$temporary"
+  chmod 0640 "$temporary"
+  mv -f "$temporary" "$destination"
+}
+
+cleanup() {
+  local status=$?
+  if [[ -n $drill_container ]]; then
+    docker rm --force "$drill_container" >/dev/null 2>&1 || true
+  fi
+  if [[ -n $partial_dir && -d $partial_dir ]]; then
+    case "$partial_dir" in
+      "$backup_root"/.partial-*) find "$partial_dir" -depth -delete 2>/dev/null || true ;;
+    esac
+  fi
+  exit "$status"
+}
+trap cleanup EXIT
+
+record_failure() {
+  local status=$?
+  trap - ERR
+  set +e
+  if [[ -d $state_dir ]]; then
+    if [[ $mode == drill ]]; then
+      write_status "$drill_status_file" \
+        'status=failure' \
+        "attempted_at_utc=$(date --utc +%FT%TZ)"
+    else
+      write_status "$backup_status_file" \
+        'status=failure' \
+        "attempted_at_utc=$(date --utc +%FT%TZ)" \
+        "type=$mode"
+    fi
+  fi
+  exit "$status"
+}
+trap record_failure ERR
+
+[[ $(id -u) -eq 0 ]] || die 'Run as root.'
+[[ $# -ge 1 ]] || die 'Usage: taskplan-backup scheduled | pre-deploy VERSION SHA | drill BACKUP_SET'
+
+mode=$1
+shift
+case "$mode" in
+  scheduled)
+    [[ $# -eq 0 ]] || die 'Usage: taskplan-backup scheduled'
+    ;;
+  pre-deploy)
+    [[ $# -eq 2 ]] || die 'Usage: taskplan-backup pre-deploy VERSION SHA'
+    target_version=$1
+    target_sha=$2
+    [[ $target_version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die 'Invalid SemVer version.'
+    [[ $target_sha =~ ^[0-9a-f]{40}$ ]] || die 'SHA must be a full lowercase hexadecimal commit SHA.'
+    ;;
+  drill)
+    [[ $# -eq 1 ]] || die 'Usage: taskplan-backup drill BACKUP_SET'
+    backup_set=$1
+    ;;
+  *)
+    die 'Usage: taskplan-backup scheduled | pre-deploy VERSION SHA | drill BACKUP_SET'
+    ;;
+esac
+
+install -d -o root -g root -m 0700 "$backup_root"
+if [[ ! -d $state_dir ]]; then
+  install -d -o root -g root -m 0750 "$state_dir"
+fi
+[[ -d $(dirname "$lock_file") ]] || die 'Maintenance lock directory does not exist.'
+
+if [[ ${TASKPLAN_MAINTENANCE_LOCK_HELD:-0} == 1 ]]; then
+  [[ -e /proc/$$/fd/9 ]] || die 'Maintenance lock descriptor was not inherited.'
+  [[ $(readlink "/proc/$$/fd/9") == "$lock_file" ]] || die 'Unexpected maintenance lock descriptor.'
+else
+  exec 9>"$lock_file"
+  flock -n 9 || die 'Another TaskPlan maintenance operation is running.'
+fi
+
+[[ $(docker inspect --format '{{.State.Running}}' "$postgres_container" 2>/dev/null) == true ]] ||
+  die 'TaskPlan PostgreSQL container is not running.'
+
+if [[ $mode == drill ]]; then
+  resolved_backup_set="$(realpath -e -- "$backup_set")" || die 'Backup set does not exist.'
+  case "$resolved_backup_set" in
+    "$backup_root"/taskplan-*) ;;
+    *) die 'Backup set must be inside the TaskPlan backup directory.' ;;
+  esac
+  [[ -f $resolved_backup_set/database.dump && -f $resolved_backup_set/SHA256SUMS ]] ||
+    die 'Backup set is incomplete.'
+
+  (
+    cd "$resolved_backup_set"
+    sha256sum --check --status SHA256SUMS
+  ) || die 'Backup checksum validation failed.'
+
+  postgres_image="$(docker inspect --format '{{.Config.Image}}' "$postgres_container")"
+  [[ -n $postgres_image ]] || die 'Could not resolve the PostgreSQL image.'
+  drill_container="taskplan-restore-drill-$$"
+  started_at_utc="$(date --utc +%FT%TZ)"
+  started_seconds=$SECONDS
+  log "Starting isolated restore drill for $(basename "$resolved_backup_set")."
+  docker run --detach --rm --name "$drill_container" --network none \
+    --env POSTGRES_HOST_AUTH_METHOD=trust "$postgres_image" >/dev/null
+
+  ready=false
+  for _ in $(seq 1 60); do
+    if docker exec "$drill_container" pg_isready -U postgres -d postgres >/dev/null 2>&1; then
+      ready=true
+      break
+    fi
+    sleep 1
+  done
+  [[ $ready == true ]] || die 'Isolated PostgreSQL did not become ready.'
+
+  docker exec -i "$drill_container" pg_restore -U postgres -d postgres \
+    --no-owner --no-privileges < "$resolved_backup_set/database.dump"
+  relation_count="$(docker exec "$drill_container" psql -U postgres -d postgres -Atqc \
+    "SELECT count(*) FROM pg_catalog.pg_tables WHERE schemaname = 'public';")"
+  [[ $relation_count =~ ^[0-9]+$ && $relation_count -gt 0 ]] ||
+    die 'Restore drill did not create the expected public schema.'
+
+  duration_seconds=$((SECONDS - started_seconds))
+  completed_at_utc="$(date --utc +%FT%TZ)"
+  write_status "$drill_status_file" \
+    'status=success' \
+    "backup_set=$(basename "$resolved_backup_set")" \
+    "started_at_utc=$started_at_utc" \
+    "completed_at_utc=$completed_at_utc" \
+    "duration_seconds=$duration_seconds" \
+    "public_table_count=$relation_count"
+  log "Restore drill succeeded in ${duration_seconds}s."
+  exit 0
+fi
+
+timestamp="$(date --utc +%FT%TZ)"
+backup_id="$(date --utc +%Y%m%dT%H%M%S.%NZ)"
+backup_name="taskplan-${backup_id}-${mode}"
+partial_dir="$(mktemp -d "$backup_root/.partial-${backup_name}.XXXXXX")"
+final_dir="$backup_root/$backup_name"
+dump_file="$partial_dir/database.dump"
+
+log "Creating $mode PostgreSQL backup."
+docker exec "$postgres_container" sh -ceu \
+  'exec pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom --no-owner --no-privileges' \
+  > "$dump_file"
+chmod 0600 "$dump_file"
+[[ -s $dump_file ]] || die 'PostgreSQL dump is empty.'
+docker exec -i "$postgres_container" pg_restore --list < "$dump_file" >/dev/null
+
+checksum="$(sha256sum "$dump_file" | awk '{print $1}')"
+printf '%s  database.dump\n' "$checksum" > "$partial_dir/SHA256SUMS"
+chmod 0600 "$partial_dir/SHA256SUMS"
+size_bytes="$(stat --format '%s' "$dump_file")"
+postgres_image="$(docker inspect --format '{{.Config.Image}}' "$postgres_container")"
+
+current_version=unknown
+current_sha=unknown
+if [[ -f $release_state_file ]]; then
+  candidate_version="$(sed -n 's/^version=//p' "$release_state_file" | head -n1)"
+  candidate_sha="$(sed -n 's/^sha=//p' "$release_state_file" | head -n1)"
+  [[ $candidate_version =~ ^([0-9]+\.[0-9]+\.[0-9]+|bootstrap-legacy)$ ]] && current_version=$candidate_version
+  [[ $candidate_sha =~ ^([0-9a-f]{40}|legacy)$ ]] && current_sha=$candidate_sha
+fi
+
+{
+  printf 'created_at_utc=%s\n' "$timestamp"
+  printf 'type=%s\n' "$mode"
+  printf 'size_bytes=%s\n' "$size_bytes"
+  printf 'sha256=%s\n' "$checksum"
+  printf 'postgres_image=%s\n' "$postgres_image"
+  printf 'current_version=%s\n' "$current_version"
+  printf 'current_sha=%s\n' "$current_sha"
+  if [[ $mode == pre-deploy ]]; then
+    printf 'target_version=%s\n' "$target_version"
+    printf 'target_sha=%s\n' "$target_sha"
+  fi
+} > "$partial_dir/metadata.env"
+chmod 0600 "$partial_dir/metadata.env"
+
+mv "$partial_dir" "$final_dir"
+partial_dir=''
+write_status "$backup_status_file" \
+  'status=success' \
+  "backup_set=$backup_name" \
+  "completed_at_utc=$timestamp" \
+  "type=$mode" \
+  "size_bytes=$size_bytes" \
+  "sha256=$checksum"
+
+while IFS= read -r -d '' expired_backup; do
+  [[ $expired_backup != "$final_dir" ]] || continue
+  case "$expired_backup" in
+    "$backup_root"/taskplan-*) find "$expired_backup" -depth -delete ;;
+  esac
+done < <(find "$backup_root" -mindepth 1 -maxdepth 1 -type d -name 'taskplan-*' \
+  -mmin "+$retention_minutes" -print0)
+
+log "Backup completed: $final_dir ($size_bytes bytes)."

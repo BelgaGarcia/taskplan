@@ -159,77 +159,103 @@ de aplicação. Migrations são forward-only e dados não são revertidos. Por
 isso, toda migration deve ser compatível com a versão imediatamente anterior
 ou ter um plano coordenado de recuperação.
 
-## Backups: estado atual
+## Backup automatizado do PostgreSQL
 
-Na auditoria de 23/08/2026 não foi encontrada rotina de backup do TaskPlan nos
-workflows, scripts do repositório, timers do systemd ou arquivos globais em
-`/etc/cron.d`. O job `centrasa-backup` existente no servidor pertence a outro
-sistema. O diretório `/var/backups/taskplan` foi reservado pelo bootstrap, mas
-o `taskplan-deploy` atual não cria dumps nele.
+O PostgreSQL é a fonte de verdade restaurável. Redis contém sessões que podem
+ser invalidadas e o volume do pgAdmin contém apenas configuração administrativa;
+por isso, ambos ficam fora do backup. O volume do PostgreSQL fornece
+persistência, mas não substitui os dumps.
 
-Consequentemente:
+`taskplan-backup` cria um conjunto root-only em
+`/var/backups/taskplan/postgres`. Cada conjunto contém `database.dump` no
+formato custom do PostgreSQL, `SHA256SUMS` e metadados operacionais sem
+credenciais. O dump só recebe seu nome definitivo depois de estar não vazio,
+passar por `pg_restore --list` e ter o checksum calculado.
 
-- o volume `taskplan-postgres-data` fornece persistência, não backup;
-- as imagens versionadas permitem rollback de código, não recuperação de
-  dados;
-- Redis usa AOF, mas isso não substitui backup do PostgreSQL;
-- uma cópia externa, retenção automática e teste periódico de restauração
-  ainda precisam ser implantados para existir proteção automatizada completa;
-- o `crontab` de `root`, que exige elevação administrativa para leitura, deve
-  ser conferido antes de concluir uma auditoria formal do host.
+O timer `taskplan-backup.timer` executa diariamente às 03:00 no fuso
+`America/Sao_Paulo`, com atraso aleatório fixo de até 15 minutos e recuperação
+de uma execução perdida após reinicialização. O deploy também cria um backup
+obrigatório depois do build e antes de `prisma migrate deploy`. Falha no backup
+interrompe o deploy antes da migration.
 
-Backups nunca devem ser adicionados ao Git.
+Backup, drill e deploy usam `/run/lock/taskplan-maintenance.lock`, portanto não
+podem disputar os mesmos dados. Conjuntos com mais de sete dias são removidos
+somente após a conclusão de um novo backup válido. A meta inicial é RPO de até
+24 horas e RTO de até quatro horas.
 
-## Backup manual do PostgreSQL
+Esta primeira versão mantém cópias sem criptografia no mesmo host. Permissões
+`0700` no diretório e `0600` nos arquivos reduzem exposição acidental, mas não
+protegem contra comprometimento ou perda do servidor. Cópia externa,
+criptografia e alerta fora do host continuam sendo riscos operacionais
+explícitos. Backups nunca devem ser adicionados ao Git.
 
-Faça o backup antes de manutenção de banco, migration de risco ou restauração.
-No servidor, a partir de uma conta com `sudo`:
+### Consultar e executar o backup
 
 ```bash
-BACKUP_DIR=/var/backups/taskplan/postgres
-BACKUP_FILE="$BACKUP_DIR/taskplan-$(date -u +%Y%m%dT%H%M%SZ).dump"
-
-sudo install -d -o root -g root -m 0700 "$BACKUP_DIR"
-sudo docker exec taskplan-postgres sh -c \
-  'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' \
-  | sudo tee "$BACKUP_FILE" >/dev/null
-sudo chmod 0600 "$BACKUP_FILE"
-sudo test -s "$BACKUP_FILE"
-sudo cat "$BACKUP_FILE" | sudo docker exec -i taskplan-postgres pg_restore --list >/dev/null
-echo "$BACKUP_FILE"
+sudo systemctl status taskplan-backup.timer --no-pager
+sudo systemctl list-timers taskplan-backup.timer --no-pager
+sudo journalctl -u taskplan-backup.service -n 100 --no-pager
+sudo cat /var/lib/taskplan/backup-status
+sudo /usr/local/sbin/taskplan-backup scheduled
 ```
 
-O último comando valida a estrutura do arquivo, mas uma restauração de teste
-em banco isolado continua sendo a única prova completa. Copie o dump para um
-destino externo controlado e aplique retenção; manter apenas arquivos no mesmo
-disco do servidor não protege contra perda do host.
+O comando manual usa o mesmo lock, validação e retenção do timer. O runner de
+produção não recebe permissão direta para executá-lo; somente o comando
+root-owned de deploy pode solicitar o modo `pre-deploy`.
+
+### Drill mensal isolado
+
+Uma vez por mês e após instalar a rotina pela primeira vez, um administrador
+deve selecionar um conjunto validado e executar:
+
+```bash
+sudo /usr/local/sbin/taskplan-backup drill \
+  /var/backups/taskplan/postgres/CONJUNTO_VALIDADO
+sudo cat /var/lib/taskplan/restore-drill-status
+```
+
+O drill confere o checksum, restaura em um container PostgreSQL efêmero sem
+rede, valida que o schema público foi criado e sempre remove o container. Ele
+não altera a instância de produção. A duração deve permanecer abaixo do RTO de
+quatro horas; login e fluxos funcionais ainda devem ser validados no processo
+controlado de restauração quando aplicável.
 
 ## Restauração manual do PostgreSQL
 
-Restauração é destrutiva e exige janela de manutenção, arquivo validado e
-aprovação explícita. Primeiro registre a release atual e crie um dump de
-segurança. Depois:
+Restauração é destrutiva e exige janela de manutenção, arquivo validado,
+aprovação explícita e plano de retorno. Use uma sessão root dedicada, mantenha
+o lock até o fim e crie primeiro um backup preventivo:
 
 ```bash
+sudo -i
+exec 9>/run/lock/taskplan-maintenance.lock
+flock -n 9 || exit 1
+
+TASKPLAN_MAINTENANCE_LOCK_HELD=1 \
+  /usr/local/sbin/taskplan-backup scheduled
+
 cd /opt/taskplan/src/taskplan
 
-sudo docker compose \
+docker compose \
   --project-directory /opt/taskplan/src/taskplan \
   --env-file /etc/taskplan/taskplan.env \
   --env-file /var/lib/taskplan/release.env \
   -f /etc/taskplan/compose.yaml stop frontend backend
 
-sudo cat /CAMINHO/backup-validado.dump \
-  | sudo docker exec -i taskplan-postgres sh -c \
-    'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner --no-privileges'
+cd /var/backups/taskplan/postgres/CONJUNTO_VALIDADO
+sha256sum --check SHA256SUMS
 
-sudo docker compose \
+docker exec -i taskplan-postgres sh -c \
+    'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner --no-privileges' \
+  < database.dump
+
+docker compose \
   --project-directory /opt/taskplan/src/taskplan \
   --env-file /etc/taskplan/taskplan.env \
   --env-file /var/lib/taskplan/release.env \
   -f /etc/taskplan/compose.yaml run --rm backend npx prisma migrate deploy
 
-sudo docker compose \
+docker compose \
   --project-directory /opt/taskplan/src/taskplan \
   --env-file /etc/taskplan/taskplan.env \
   --env-file /var/lib/taskplan/release.env \
@@ -237,7 +263,8 @@ sudo docker compose \
 ```
 
 Finalize validando `/api/health`, `/healthz`, login, versão exibida e uma
-consulta funcional. Não apague o dump de segurança até a validação terminar.
+consulta funcional. Só encerre a sessão root para liberar o lock depois do
+aceite; não apague o dump preventivo até a validação terminar.
 
 ## Manutenção manual do servidor
 
@@ -245,7 +272,10 @@ consulta funcional. Não apague o dump de segurança até a validação terminar
 
 ```bash
 sudo cat /var/lib/taskplan/current-release
+sudo cat /var/lib/taskplan/backup-status
+sudo cat /var/lib/taskplan/restore-drill-status
 sudo tail -n 200 /var/log/taskplan-deploy.log
+sudo journalctl -u taskplan-backup.service -n 100 --no-pager
 sudo docker ps --filter name=taskplan
 sudo docker logs --tail 200 taskplan-backend
 sudo docker logs --tail 200 taskplan-frontend
@@ -290,9 +320,11 @@ cd /opt/taskplan/src/taskplan
 sudo ./ops/taskplan-install-production-layout
 ```
 
-O bootstrap atualiza o clone, instala o Compose e o comando root-owned, valida
-o sudoers restrito do runner e não recria os containers imediatamente. Em
-seguida, reaplique uma Release existente ou aguarde a próxima Release.
+O bootstrap atualiza o clone, instala o Compose, os comandos root-owned e o
+timer de backup, valida o sudoers restrito do runner e não recria os containers
+imediatamente. Depois da primeira instalação, execute um backup e um drill
+manuais antes de depender da rotina; em seguida, reaplique uma Release
+existente ou aguarde a próxima Release.
 
 ### Espaço em disco
 
@@ -316,5 +348,5 @@ depois de validar os backups.
 5. CORS devolve `Access-Control-Allow-Origin` para cada origem aprovada.
 6. `/var/lib/taskplan/current-release` corresponde à Release esperada.
 7. Logs não apresentam loop de reinício, erro de migration ou conexão.
-8. Se houve alteração de dados, o backup e sua validação foram registrados fora
-   do repositório.
+8. O último backup está válido e dentro do RPO; o drill mensal permanece dentro
+   do RTO e suas evidências sanitizadas foram registradas fora do repositório.

@@ -713,11 +713,11 @@ Com isso, cada desenvolvedor possui seu prÃ³prio ambiente completo do TaskPlan
 
 A stable GitHub Release named `vMAJOR.MINOR.PATCH` runs the complete quality gate again and then dispatches only the version and full commit SHA to the dedicated `taskplan-prod` runner. The runner can invoke only `/usr/local/sbin/taskplan-deploy` through sudo.
 
-The root-owned command builds immutable versioned images for both services, runs `prisma migrate deploy`, promotes backend then frontend, verifies `http://192.168.100.15:5183/api/health` and `http://192.168.100.15:5182/healthz`, and records the release in `/var/lib/taskplan/current-release`.
+The root-owned command builds immutable versioned images for both services, creates and validates a PostgreSQL backup, runs `prisma migrate deploy`, promotes backend then frontend, verifies both service healthchecks, and records the release in `/var/lib/taskplan/current-release`.
 
 If an application healthcheck fails after promotion, it restores the previous frontend and backend image tags. Prisma migrations are deliberately forward-only: an application rollback does not restore or modify PostgreSQL/Redis data. Every migration released to production must therefore remain compatible with the immediately preceding application version until a coordinated recovery plan is approved.
 
-The initial host migration preserves the currently running images as `bootstrap-legacy` and does not recreate any service. It must be executed by an administrator from the supplied bootstrap script; the first GitHub Release performs the actual promotion.
+The initial host migration preserves the currently running images as `bootstrap-legacy`, installs and enables the daily PostgreSQL backup timer, and does not recreate any service. It must be executed by an administrator from the supplied bootstrap script; the first GitHub Release performs the actual promotion.
 
 Consulte [a arquitetura e o manual de operação](docs/arquitetura.md) e
 [o fluxo operacional de release e deploy](docs/DEPLOYMENT.md).

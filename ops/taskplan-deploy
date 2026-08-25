@@ -76,6 +76,8 @@ chmod 0600 "$tmp_release"
 next_compose=(docker compose --project-directory "$repo" --env-file "$env_file" --env-file "$tmp_release" -f "$compose")
 log 'Building versioned frontend and backend images.'
 "${next_compose[@]}" build backend frontend
+log 'Creating the mandatory pre-deploy PostgreSQL backup.'
+TASKPLAN_MAINTENANCE_LOCK_HELD=1 /usr/local/sbin/taskplan-backup pre-deploy "$version" "$sha"
 log 'Applying Prisma migrations before promotion.'
 "${next_compose[@]}" run --rm backend npx prisma migrate deploy
 mv -f "$tmp_release" "$release_env"

@@ -94,6 +94,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate operational scripts
+        run: |
+          bash -n ops/taskplan-backup ops/taskplan-deploy ops/taskplan-install-production-layout
+          shellcheck ops/taskplan-backup ops/taskplan-deploy ops/taskplan-install-production-layout
       - run: docker compose --env-file .env.example config --quiet
   secrets:
     runs-on: ubuntu-latest
