@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-app=taskplan
 repo=/opt/taskplan/src/taskplan
 compose=/etc/taskplan/compose.yaml
 env_file=/etc/taskplan/taskplan.env
@@ -63,7 +62,9 @@ trap rollback ERR
 
 log "Validating release $version ($sha)."
 git -C "$repo" fetch --quiet origin main --tags
-git -C "$repo" diff --quiet && git -C "$repo" diff --cached --quiet || die 'Controlled clone is not clean.'
+if ! git -C "$repo" diff --quiet || ! git -C "$repo" diff --cached --quiet; then
+  die 'Controlled clone is not clean.'
+fi
 tag="v$version"
 git -C "$repo" show-ref --verify --quiet "refs/tags/$tag" || die "Tag $tag does not exist."
 [[ "$(git -C "$repo" rev-list -n1 "$tag")" == "$sha" ]] || die 'Tag does not resolve to supplied SHA.'
@@ -76,6 +77,8 @@ chmod 0600 "$tmp_release"
 next_compose=(docker compose --project-directory "$repo" --env-file "$env_file" --env-file "$tmp_release" -f "$compose")
 log 'Building versioned frontend and backend images.'
 "${next_compose[@]}" build backend frontend
+log 'Creating the mandatory pre-deploy PostgreSQL backup.'
+TASKPLAN_MAINTENANCE_LOCK_HELD=1 /usr/local/sbin/taskplan-backup pre-deploy "$version" "$sha"
 log 'Applying Prisma migrations before promotion.'
 "${next_compose[@]}" run --rm backend npx prisma migrate deploy
 mv -f "$tmp_release" "$release_env"

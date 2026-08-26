@@ -4,7 +4,7 @@
 
 Nenhum push publica produção diretamente. Um merge em `main` inicia `TaskPlan quality`. O monorepo mantém Angular em `frontend/`, NestJS/Prisma em `backend/` e infraestrutura na raiz. A qualidade detecta os caminhos alterados e executa somente as validações de frontend, backend ou Compose necessárias; a auditoria de workflows e segredos continua obrigatória. Somente se esse workflow terminar verde, `Create TaskPlan release` avalia os commits ainda não liberados e cria uma Release GitHub estável e imutável. A conclusão bem-sucedida desse criador de releases aciona `TaskPlan production release`, que resolve a tag imutável no mesmo SHA, repete a validação completa dos dois serviços e despacha exclusivamente versão e SHA ao runner `taskplan-prod`. Releases publicadas manualmente também continuam acionando esse workflow.
 
-A etapa de produção executa apenas `sudo -n /usr/local/sbin/taskplan-deploy VERSION SHA`. Esse comando é root-owned e recria somente backend e frontend. PostgreSQL, Redis, volumes e pgAdmin não são recriados pelo deploy.
+A etapa de produção executa apenas `sudo -n /usr/local/sbin/taskplan-deploy VERSION SHA`. Esse comando é root-owned, cria um backup PostgreSQL obrigatório antes das migrations e recria somente backend e frontend. PostgreSQL, Redis, volumes e pgAdmin não são recriados pelo deploy.
 
 ## Convenção de commits e SemVer
 
@@ -22,8 +22,9 @@ O commit que é liberado precisa estar em `main`; tags existentes nunca são ree
 1. Criar branch e Pull Request.
 2. O workflow de qualidade executa lint, testes, builds e a imagem Nginx do frontend quando `frontend/**` muda; Prisma, testes e build do NestJS quando `backend/**` muda; e Compose quando sua configuração muda. Actionlint e auditoria de segredos sempre são executados.
 3. Após aprovação e merge em `main`, a automação cria uma Release somente para mudanças `fix`, `perf`, `feat` ou breaking.
-4. A Release valida novamente o código, cria imagens versionadas, executa `prisma migrate deploy`, promove backend e frontend e verifica os healthchecks.
-5. Se um healthcheck falhar após a promoção, o comando restaura as imagens anteriores de backend e frontend. Migrations são forward-only e não restauram dados automaticamente.
+4. A Release valida novamente o código, cria imagens versionadas e gera um dump PostgreSQL validado sob o lock compartilhado de manutenção. Falha no backup encerra o deploy antes de qualquer migration.
+5. O deploy executa `prisma migrate deploy`, promove backend e frontend e verifica os healthchecks.
+6. Se um healthcheck falhar após a promoção, o comando restaura as imagens anteriores de backend e frontend. Migrations são forward-only e não restauram dados automaticamente.
 
 ## Origens publicadas
 
@@ -47,7 +48,13 @@ A imagem do frontend recebe `TASKPLAN_RELEASE` pelo Compose e publica o valor no
 - Repositório, releases e histórico: `https://github.com/BelgaGarcia/taskplan`
 - Actions: `https://github.com/BelgaGarcia/taskplan/actions`
 
-Mudanças no próprio mecanismo root-owned (`ops/taskplan-deploy`) requerem instalação explícita por administrador no host. Isso é intencional: uma Release de aplicação não pode modificar automaticamente as permissões root do servidor.
+Mudanças nos mecanismos root-owned (`ops/taskplan-deploy`, `ops/taskplan-backup` e suas units systemd) requerem instalação explícita por administrador no host. Isso é intencional: uma Release de aplicação não pode modificar automaticamente as permissões root do servidor.
+
+Após instalar pela primeira vez, o administrador deve executar
+`taskplan-backup scheduled`, realizar um `taskplan-backup drill` com o conjunto
+criado e conferir o timer, o journal e os arquivos de estado. A operação
+detalhada, a retenção de sete dias, o RPO de 24 horas e o RTO de quatro horas
+estão descritos no [manual de arquitetura e operação](arquitetura.md).
 
 O bootstrap `ops/taskplan-install-production-layout` normaliza o remoto do clone controlado para `https://github.com/BelgaGarcia/taskplan.git` antes de validar o `fetch`; portanto, ele também migra instalações existentes quando executado novamente pelo administrador.
 
