@@ -317,7 +317,7 @@ Após o código aprovado estar no clone controlado, um administrador executa:
 
 ```bash
 cd /opt/taskplan/src/taskplan
-sudo ./ops/taskplan-install-production-layout
+sudo bash ./ops/taskplan-install-production-layout
 ```
 
 O bootstrap atualiza o clone, instala o Compose, os comandos root-owned e o
