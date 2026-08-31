@@ -147,6 +147,10 @@ describe('CalendarComponent', () => {
     const modal = fixture.nativeElement.querySelector('.occurrence-modal');
     expect(modal.getAttribute('role')).toBe('alertdialog');
     expect(modal.textContent).toContain('Agosto de 2026');
+    expect(modal.textContent).toContain(
+      'Nenhuma exclusão persistente será criada ou removida',
+    );
+    expect(modal.textContent).toContain('a geração as informará');
 
     const confirmButton = modal.querySelector(
       '.danger-button',
@@ -155,6 +159,28 @@ describe('CalendarComponent', () => {
 
     expect(api.clearAgendaMonth).toHaveBeenCalledOnceWith('2026-08');
     expect(api.calendar).toHaveBeenCalledTimes(2);
+  });
+
+  it('warns that deleting one occurrence prevents its original date from being regenerated', () => {
+    fixture.destroy();
+    auth.isAdmin = true;
+    fixture = TestBed.createComponent(CalendarComponent);
+    component = fixture.componentInstance;
+    component.selected = occurrence(1);
+    component.modal = 'details';
+    fixture.detectChanges();
+
+    const deleteButton = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((button) =>
+      button.textContent?.includes('Excluir da agenda'),
+    ) as HTMLButtonElement;
+    deleteButton.click();
+    fixture.detectChanges();
+
+    const modal = fixture.nativeElement.querySelector('.occurrence-modal');
+    expect(modal.textContent).toContain('cria uma exclusão persistente');
+    expect(modal.textContent).toContain('Limpar agenda do mês');
   });
 
   it('reports created, duplicate, and intentionally excluded occurrences after generation', () => {

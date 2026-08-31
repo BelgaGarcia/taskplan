@@ -1,4 +1,5 @@
 import { OccurrenceGeneratorService } from './occurrence-generator.service';
+import { TaskOccurrencesService } from './task-occurrences.service';
 
 describe('OccurrenceGeneratorService', () => {
   const generatedDates = async (
@@ -113,6 +114,212 @@ describe('OccurrenceGeneratorService', () => {
         data: [
           expect.objectContaining({
             originalDate: new Date('2026-09-01T00:00:00.000Z'),
+          }),
+        ],
+      }),
+    );
+  });
+
+  it('regenerates both CPD checklists from 01/09 after a monthly clear leaves no exclusions', async () => {
+    const createMany = jest.fn(
+      ({
+        data,
+      }: {
+        data: Array<{ originalDate: Date; scheduledDate: Date }>;
+      }) => Promise.resolve({ count: data.length }),
+    );
+    const findExclusions = jest.fn().mockResolvedValue([]);
+    const deleteMany = jest.fn().mockResolvedValue({ count: 10 });
+    const upsertExclusion = jest.fn();
+    const transaction = jest.fn((callback: (tx: never) => Promise<unknown>) =>
+      callback({
+        taskOccurrence: { deleteMany },
+        taskOccurrenceExclusion: { upsert: upsertExclusion },
+        auditLog: { create: jest.fn().mockResolvedValue({}) },
+      } as never),
+    );
+    const prisma = {
+      $transaction: transaction,
+      task: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'checklist-cpd-morning',
+            startDate: new Date('2026-09-01T00:00:00.000Z'),
+            endDate: null,
+            scheduledTime: null,
+            responsibleUserId: null,
+            advanceOnNonBusinessDay: true,
+            periodicity: { active: true, type: 'DAILY', interval: 1 },
+          },
+          {
+            id: 'checklist-cpd-afternoon',
+            startDate: new Date('2026-09-01T00:00:00.000Z'),
+            endDate: null,
+            scheduledTime: null,
+            responsibleUserId: null,
+            advanceOnNonBusinessDay: true,
+            periodicity: { active: true, type: 'DAILY', interval: 1 },
+          },
+        ]),
+      },
+      taskOccurrence: { createMany },
+      taskOccurrenceExclusion: { findMany: findExclusions },
+      holiday: { findMany: jest.fn().mockResolvedValue([]) },
+    };
+    const calendar = new TaskOccurrencesService(
+      prisma as never,
+      { getInheritedPositionIds: jest.fn().mockResolvedValue([]) } as never,
+    );
+    const service = new OccurrenceGeneratorService(prisma as never);
+
+    await expect(
+      calendar.clearMonth('2026-09', {
+        sub: 'admin-1',
+        email: 'admin@example.com',
+        roleId: 'role',
+        accessLevel: 'ADMIN',
+        positionId: null,
+      }),
+    ).resolves.toEqual({ month: '2026-09', deleted: 10 });
+    expect(upsertExclusion).not.toHaveBeenCalled();
+
+    await expect(service.generate('2026-09-01', '2026-09-05')).resolves.toEqual(
+      expect.objectContaining({
+        occurrencesAttempted: 10,
+        occurrencesCreated: 10,
+        duplicatesSkipped: 0,
+        occurrencesExcluded: 0,
+      }),
+    );
+    expect(findExclusions).toHaveBeenCalledTimes(2);
+    expect(createMany).toHaveBeenCalledTimes(2);
+    expect(createMany).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        data: [
+          expect.objectContaining({
+            originalDate: new Date('2026-09-01T00:00:00.000Z'),
+            scheduledDate: new Date('2026-09-01T00:00:00.000Z'),
+          }),
+          expect.objectContaining({
+            originalDate: new Date('2026-09-02T00:00:00.000Z'),
+            scheduledDate: new Date('2026-09-02T00:00:00.000Z'),
+          }),
+          expect.objectContaining({
+            originalDate: new Date('2026-09-03T00:00:00.000Z'),
+            scheduledDate: new Date('2026-09-03T00:00:00.000Z'),
+          }),
+          expect.objectContaining({
+            originalDate: new Date('2026-09-04T00:00:00.000Z'),
+            scheduledDate: new Date('2026-09-04T00:00:00.000Z'),
+          }),
+          expect.objectContaining({
+            originalDate: new Date('2026-09-05T00:00:00.000Z'),
+            scheduledDate: new Date('2026-09-04T00:00:00.000Z'),
+          }),
+        ],
+      }),
+    );
+    expect(createMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        data: [
+          expect.objectContaining({
+            originalDate: new Date('2026-09-01T00:00:00.000Z'),
+            scheduledDate: new Date('2026-09-01T00:00:00.000Z'),
+          }),
+          expect.objectContaining({
+            originalDate: new Date('2026-09-02T00:00:00.000Z'),
+            scheduledDate: new Date('2026-09-02T00:00:00.000Z'),
+          }),
+          expect.objectContaining({
+            originalDate: new Date('2026-09-03T00:00:00.000Z'),
+            scheduledDate: new Date('2026-09-03T00:00:00.000Z'),
+          }),
+          expect.objectContaining({
+            originalDate: new Date('2026-09-04T00:00:00.000Z'),
+            scheduledDate: new Date('2026-09-04T00:00:00.000Z'),
+          }),
+          expect.objectContaining({
+            originalDate: new Date('2026-09-05T00:00:00.000Z'),
+            scheduledDate: new Date('2026-09-04T00:00:00.000Z'),
+          }),
+        ],
+      }),
+    );
+  });
+
+  it('shows both CPD checklists on 04/09 when 01/09 through 04/09 are excluded', async () => {
+    const createMany = jest.fn(({ data }: { data: unknown[] }) =>
+      Promise.resolve({ count: data.length }),
+    );
+    const excludedDates = [
+      '2026-09-01T00:00:00.000Z',
+      '2026-09-02T00:00:00.000Z',
+      '2026-09-03T00:00:00.000Z',
+      '2026-09-04T00:00:00.000Z',
+    ].map((value) => new Date(value));
+    const service = new OccurrenceGeneratorService({
+      task: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'checklist-cpd-morning',
+            startDate: new Date('2026-09-01T00:00:00.000Z'),
+            endDate: null,
+            scheduledTime: null,
+            responsibleUserId: null,
+            advanceOnNonBusinessDay: true,
+            periodicity: { active: true, type: 'DAILY', interval: 1 },
+          },
+          {
+            id: 'checklist-cpd-afternoon',
+            startDate: new Date('2026-09-01T00:00:00.000Z'),
+            endDate: null,
+            scheduledTime: null,
+            responsibleUserId: null,
+            advanceOnNonBusinessDay: true,
+            periodicity: { active: true, type: 'DAILY', interval: 1 },
+          },
+        ]),
+      },
+      taskOccurrence: { createMany },
+      taskOccurrenceExclusion: {
+        findMany: jest
+          .fn()
+          .mockResolvedValue(
+            excludedDates.map((originalDate) => ({ originalDate })),
+          ),
+      },
+      holiday: { findMany: jest.fn().mockResolvedValue([]) },
+    } as never);
+
+    await expect(service.generate('2026-09-01', '2026-09-05')).resolves.toEqual(
+      expect.objectContaining({
+        occurrencesAttempted: 2,
+        occurrencesCreated: 2,
+        duplicatesSkipped: 0,
+        occurrencesExcluded: 8,
+      }),
+    );
+    expect(createMany).toHaveBeenCalledTimes(2);
+    expect(createMany).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        data: [
+          expect.objectContaining({
+            originalDate: new Date('2026-09-05T00:00:00.000Z'),
+            scheduledDate: new Date('2026-09-04T00:00:00.000Z'),
+          }),
+        ],
+      }),
+    );
+    expect(createMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        data: [
+          expect.objectContaining({
+            originalDate: new Date('2026-09-05T00:00:00.000Z'),
+            scheduledDate: new Date('2026-09-04T00:00:00.000Z'),
           }),
         ],
       }),
