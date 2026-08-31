@@ -54,6 +54,8 @@ describe('CalendarComponent', () => {
       'clearAgendaMonth',
       'continueOccurrenceTomorrow',
       'generateAgenda',
+      'occurrenceExclusions',
+      'restoreOccurrencePeriod',
     ]);
     api.calendar.and.returnValue(of(response));
     api.occurrenceOptions.and.returnValue(
@@ -71,8 +73,13 @@ describe('CalendarComponent', () => {
         occurrencesCreated: 1,
         duplicatesSkipped: 1,
         occurrencesExcluded: 1,
+        occurrencesSuppressedByCollision: 1,
+        excludedOccurrences: [],
+        collisionSuppressedOccurrences: [{ taskId: 'task-1', taskName: 'Atividade 1', originalDate: '2026-09-05', scheduledDate: '2026-09-04' }],
       }),
     );
+    api.occurrenceExclusions.and.returnValue(of({ from: '2026-08-01', to: '2026-08-31', total: 1, data: [] }));
+    api.restoreOccurrencePeriod.and.returnValue(of({ from: '2026-08-01', to: '2026-08-31', affectedTaskIds: ['task-1'], occurrencesRemoved: 1, exclusionsRestored: 1, operationalOccurrencesPreserved: 0 }));
 
     await TestBed.configureTestingModule({
       imports: [CalendarComponent],
@@ -193,8 +200,33 @@ describe('CalendarComponent', () => {
       to: '2026-09-30',
     });
     expect(component.generationNotice).toBe(
-      'Geração concluída: 1 ocorrência criada; 1 já existentes; 1 excluídas intencionalmente.',
+      'Geração concluída: 1 ocorrência criada; 1 já existentes; 1 excluídas intencionalmente; 1 suprimidas por colisão de data agendada.',
     );
+    expect(component.generationDetails).toEqual([
+      '05/09/2026 → 04/09/2026 — Atividade 1: suprimida por colisão de data agendada.',
+    ]);
+  });
+
+  it('previews exclusions and explicitly restores the displayed period for an administrator', () => {
+    fixture.destroy();
+    auth.isAdmin = true;
+    fixture = TestBed.createComponent(CalendarComponent);
+    component = fixture.componentInstance;
+    component.current = new Date(2026, 7, 1);
+    fixture.detectChanges();
+
+    const button = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((element) => element.textContent?.includes('Restaurar período')) as HTMLButtonElement;
+    button.click();
+    fixture.detectChanges();
+
+    expect(api.occurrenceExclusions).toHaveBeenCalledOnceWith({ from: '2026-08-01', to: '2026-08-31' });
+    const confirmButton = fixture.nativeElement.querySelector('.occurrence-modal .danger-button') as HTMLButtonElement;
+    confirmButton.click();
+
+    expect(api.restoreOccurrencePeriod).toHaveBeenCalledOnceWith({ from: '2026-08-01', to: '2026-08-31', confirm: true });
+    expect(component.generationNotice).toBe('Período restaurado: 1 ocorrência pendente removida; 1 exclusão persistente removida.');
   });
 
   it('sends duration and notes when continuing an occurrence tomorrow', () => {

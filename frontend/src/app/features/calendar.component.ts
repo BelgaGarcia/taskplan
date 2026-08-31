@@ -13,13 +13,15 @@ import type {
   CalendarResponse,
   FilterOptions,
   Occurrence,
+  OccurrenceExclusionList,
   OccurrenceGenerationResult,
+  OccurrencePeriodRestoreResult,
   OccurrenceResult,
 } from '../core/models';
 import { IconComponent } from '../shared/icon.component';
 
 type CalendarView = 'month' | 'workweek' | 'week' | 'day';
-type ModalMode = 'details' | 'complete' | 'reschedule' | 'generate' | 'delete' | 'more' | 'clearMonth';
+type ModalMode = 'details' | 'complete' | 'reschedule' | 'generate' | 'delete' | 'more' | 'clearMonth' | 'restorePeriod';
 type DayEventLayout = {
   occurrence: Occurrence;
   top: number;
@@ -59,13 +61,14 @@ type DayEventLayout = {
           <div class="calendar-actions">
             <label class="view-switch"><span class="sr-only">Visualização</span><select [value]="view" (change)="setView(inputValue($event))"><option value="day">Dia</option><option value="month">Mês</option><option value="workweek">Semana útil</option><option value="week">Semana completa</option></select><tp-icon name="chevron-down"></tp-icon></label>
             <button *ngIf="auth.isAdmin" type="button" class="danger-button clear-month-button" (click)="openClearMonth()">Limpar mês</button>
+            <button *ngIf="auth.isAdmin" type="button" class="secondary-button" (click)="openRestorePeriod()">Restaurar período</button>
             <button type="button" class="secondary-button" (click)="filtersOpen = !filtersOpen"><tp-icon name="filter"></tp-icon>Filtros</button>
             <button *ngIf="auth.isAdmin" type="button" class="secondary-button desktop-only" (click)="openGenerate()"><tp-icon name="repeat"></tp-icon>Gerar agenda</button>
             <button *ngIf="auth.isAdmin" type="button" class="primary-button" (click)="newTask()"><tp-icon name="plus"></tp-icon>Nova tarefa</button>
           </div>
         </div>
         <form *ngIf="filtersOpen" class="mobile-filters" [formGroup]="filters"><label>Função<select formControlName="functionId" (change)="load()"><option value="">Todas</option><option *ngFor="let option of options.functions" [value]="option.id">{{ option.name }}</option></select></label><label>Usuário<select formControlName="responsibleUserId" (change)="load()"><option value="">Todos</option><option *ngFor="let option of options.users" [value]="option.id">{{ option.name }}</option></select></label><label>Status<select formControlName="status" (change)="load()"><option value="">Todos</option><option *ngFor="let status of options.statuses" [value]="status">{{ statusLabel(status) }}</option></select></label></form>
-        <p *ngIf="error" class="form-alert error">{{ error }}</p><p *ngIf="generationNotice" class="form-alert success">{{ generationNotice }}</p><div *ngIf="loading" class="loading-block">Carregando agenda…</div>
+        <p *ngIf="error" class="form-alert error">{{ error }}</p><p *ngIf="generationNotice" class="form-alert success">{{ generationNotice }}</p><ul *ngIf="generationDetails.length" class="restore-exclusions"><li *ngFor="let detail of generationDetails">{{ detail }}</li></ul><div *ngIf="loading" class="loading-block">Carregando agenda…</div>
         <ng-container *ngIf="!loading">
           <ng-container *ngIf="view === 'day'; else calendarGrid">
             <section class="day-calendar" [attr.aria-label]="'Agenda de ' + (current | date:'dd/MM/yyyy')"><header>{{ dayLabel }}</header><div class="day-time-grid"><div class="hour-row" *ngFor="let hour of timeSlots"><time>{{ hour }}</time></div><button type="button" class="day-event" *ngFor="let event of dayEventLayouts(current)" [class]="'day-event ' + statusTone(event.occurrence.status)" [style.top.px]="event.top" [style.height.px]="event.height" [style.left.%]="event.left" [style.width.%]="event.width" [attr.aria-label]="dayEventLabel(event.occurrence)" [attr.title]="dayEventTooltip(event.occurrence)" (click)="openOccurrence(event.occurrence)"><span class="day-event-main"><time>{{ event.occurrence.scheduledTime }}</time><b>{{ event.occurrence.task.name }}</b></span><small>{{ dayEventContext(event.occurrence) }}</small><i [class]="'dot ' + statusTone(event.occurrence.status)" aria-hidden="true"></i></button><div *ngIf="showCurrentTime" class="current-time-line" [style.top.%]="currentTimePosition"><i></i><span class="sr-only">Horário atual</span></div></div><p *ngIf="!timedEventsFor(current).length" class="day-empty-state">Sem ocorrências com horário neste dia.</p></section>
@@ -77,12 +80,22 @@ type DayEventLayout = {
     </section>
 
     <div class="modal-backdrop" *ngIf="modal" (click)="closeModal()">
-      <article [class]="modal === 'delete' || modal === 'clearMonth' ? 'confirm-modal occurrence-modal' : 'detail-modal occurrence-modal'" [attr.role]="modal === 'delete' || modal === 'clearMonth' ? 'alertdialog' : 'dialog'" aria-modal="true" [attr.aria-label]="modalTitle" (click)="$event.stopPropagation()">
+      <article [class]="modal === 'delete' || modal === 'clearMonth' || modal === 'restorePeriod' ? 'confirm-modal occurrence-modal' : 'detail-modal occurrence-modal'" [attr.role]="modal === 'delete' || modal === 'clearMonth' || modal === 'restorePeriod' ? 'alertdialog' : 'dialog'" aria-modal="true" [attr.aria-label]="modalTitle" (click)="$event.stopPropagation()">
         <button type="button" class="close-button" (click)="closeModal()" aria-label="Fechar"><tp-icon name="close"></tp-icon></button>
-        <ng-container *ngIf="modal === 'generate'; else calendarModal">
+        <ng-container *ngIf="modal === 'restorePeriod'; else nonRestorePeriod">
+          <tp-icon name="warning"></tp-icon><p class="eyebrow">Restauração controlada</p><h2>Restaurar período para nova geração?</h2>
+          <p>As exclusões persistentes das datas originais informadas serão removidas. Somente ocorrências pendentes, sem execução, observações, continuação ou reagendamento serão apagadas.</p>
+          <p>Ocorrências operacionais existentes serão preservadas. Revise as exclusões abaixo antes de confirmar.</p>
+          <form [formGroup]="restorePeriodForm" (change)="loadExclusions()"><label class="form-field"><span>Data inicial</span><input type="date" formControlName="from"></label><label class="form-field"><span>Data final</span><input type="date" formControlName="to"></label></form>
+          <p *ngIf="loadingExclusions" class="loading-block">Consultando exclusões persistentes…</p>
+          <ng-container *ngIf="exclusions"><p><strong>{{ exclusions.total }}</strong> exclusão(ões) persistente(s) no intervalo.</p><ul *ngIf="exclusions.data.length" class="restore-exclusions"><li *ngFor="let exclusion of exclusions.data">{{ exclusion.originalDate | date:'dd/MM/yyyy' }} — {{ exclusion.task.name }}</li></ul></ng-container>
+          <p class="form-alert error" *ngIf="modalError">{{ modalError }}</p>
+          <footer><button type="button" class="secondary-button" [disabled]="acting" (click)="closeModal()">Cancelar</button><button type="button" class="danger-button" [disabled]="acting || restorePeriodForm.invalid" (click)="restorePeriod()">{{ acting ? 'Restaurando…' : 'Restaurar e permitir nova geração' }}</button></footer>
+        </ng-container>
+        <ng-template #nonRestorePeriod><ng-container *ngIf="modal === 'generate'; else calendarModal">
           <p class="eyebrow">Administração</p><h2>Gerar agenda</h2><p>Gera apenas ocorrências que ainda não existem no intervalo informado.</p>
           <form [formGroup]="generationForm" (ngSubmit)="generate()"><label class="form-field"><span>Data inicial</span><input type="date" formControlName="from"></label><label class="form-field"><span>Data final</span><input type="date" formControlName="to"></label><p class="form-alert error" *ngIf="modalError">{{ modalError }}</p><footer><button type="button" class="secondary-button" (click)="closeModal()">Cancelar</button><button type="submit" class="primary-button" [disabled]="acting">{{ acting ? 'Gerando…' : 'Gerar agenda' }}</button></footer></form>
-        </ng-container>
+        </ng-container></ng-template>
         <ng-template #calendarModal>
           <ng-container *ngIf="modal === 'clearMonth'; else nonClearMonthModal">
             <tp-icon name="warning"></tp-icon><p class="eyebrow">Administração</p><h2>Limpar agenda de {{ monthName(current) }}?</h2>
@@ -141,6 +154,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
   executionForm = new FormGroup({ duration: new FormControl('00:00', { validators: [Validators.required] }), result: new FormControl<OccurrenceResult>('SUCCESS', { validators: [Validators.required] }), notes: new FormControl('') });
   rescheduleForm = new FormGroup({ scheduledDate: new FormControl('', { validators: [Validators.required] }), scheduledTime: new FormControl('') });
   generationForm = new FormGroup({ from: new FormControl(this.dateKey(this.firstOfMonth(new Date())), { validators: [Validators.required] }), to: new FormControl(this.dateKey(this.endOfMonth(new Date())), { validators: [Validators.required] }) });
+  restorePeriodForm = new FormGroup({ from: new FormControl(this.dateKey(this.firstOfMonth(new Date())), { validators: [Validators.required] }), to: new FormControl(this.dateKey(this.endOfMonth(new Date())), { validators: [Validators.required] }) });
   selected?: Occurrence;
   modal?: ModalMode;
   moreDate?: Date;
@@ -151,6 +165,9 @@ export class CalendarComponent implements OnInit, OnDestroy {
   error = '';
   modalError = '';
   generationNotice = '';
+  generationDetails: string[] = [];
+  exclusions?: OccurrenceExclusionList;
+  loadingExclusions = false;
   private events = new Map<string, Occurrence[]>();
   private lastFocused?: HTMLElement;
   readonly weekdays = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
@@ -166,7 +183,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
   get periodLabel(): string { if (this.view === 'month') return this.monthName(this.current); if (this.view === 'day') return new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }).format(this.current); const days = this.visibleDays; return `${days[0].getDate()} – ${days[days.length - 1].getDate()} de ${this.monthName(days[0])}`; }
   get showCurrentTime(): boolean { return this.sameDate(this.current, this.now); }
   get currentTimePosition(): number { return ((this.now.getHours() * 60 + this.now.getMinutes()) / 1440) * 100; }
-  get modalTitle(): string { return this.modal === 'generate' ? 'Gerar agenda' : this.modal === 'clearMonth' ? 'Limpar agenda do mês' : this.modal === 'delete' ? 'Excluir ocorrência da agenda' : this.modal === 'more' ? 'Outras atividades do dia' : this.selected?.task.name || 'Detalhes da ocorrência'; }
+  get modalTitle(): string { return this.modal === 'generate' ? 'Gerar agenda' : this.modal === 'clearMonth' ? 'Limpar agenda do mês' : this.modal === 'restorePeriod' ? 'Restaurar período para nova geração' : this.modal === 'delete' ? 'Excluir ocorrência da agenda' : this.modal === 'more' ? 'Outras atividades do dia' : this.selected?.task.name || 'Detalhes da ocorrência'; }
 
   ngOnInit(): void { this.api.occurrenceOptions().subscribe({ next: (options) => this.options = options }); this.clock = setInterval(() => this.now = new Date(), 60000); this.load(); }
   ngOnDestroy(): void { if (this.clock) clearInterval(this.clock); }
@@ -181,10 +198,11 @@ export class CalendarComponent implements OnInit, OnDestroy {
   newTask(): void { void this.router.navigateByUrl('/tarefas'); }
   openGenerate(): void { this.openModal('generate'); }
   openClearMonth(): void { this.openModal('clearMonth'); }
+  openRestorePeriod(): void { const from = this.dateKey(this.firstOfMonth(this.current)); const to = this.dateKey(this.endOfMonth(this.current)); this.restorePeriodForm.reset({ from, to }); this.exclusions = undefined; this.openModal('restorePeriod'); this.loadExclusions(); }
   openMoreEvents(day: Date): void { this.moreDate = this.stripTime(day); this.moreEvents = this.eventsFor(day).slice(4); this.openModal('more'); }
   openOccurrence(occurrence: Occurrence): void { this.selected = occurrence; this.rescheduleForm.reset({ scheduledDate: occurrence.scheduledDate.slice(0, 10), scheduledTime: occurrence.scheduledTime || '' }); this.executionForm.reset({ duration: this.toDuration(occurrence.actualDurationMinutes), result: occurrence.result || 'SUCCESS', notes: occurrence.notes || '' }); this.openModal('details'); }
   openDelete(): void { this.modal = 'delete'; this.modalError = ''; setTimeout(() => (document.querySelector('.occurrence-modal .danger-button') as HTMLElement | null)?.focus()); }
-  closeModal(): void { if (!this.modal) return; this.modal = undefined; this.selected = undefined; this.moreDate = undefined; this.moreEvents = []; this.modalError = ''; setTimeout(() => this.lastFocused?.focus()); }
+  closeModal(): void { if (!this.modal) return; this.modal = undefined; this.selected = undefined; this.moreDate = undefined; this.moreEvents = []; this.exclusions = undefined; this.loadingExclusions = false; this.modalError = ''; setTimeout(() => this.lastFocused?.focus()); }
   eventsFor(day: Date): Occurrence[] { return this.events.get(this.dateKey(day)) || []; }
   timedEventsFor(day: Date): Occurrence[] { return this.eventsFor(day).filter((occurrence) => Boolean(occurrence.scheduledTime)); }
   dayEventLayouts(day: Date): DayEventLayout[] { return this.layoutDayEvents(this.timedEventsFor(day)); }
@@ -245,11 +263,16 @@ export class CalendarComponent implements OnInit, OnDestroy {
   continueTomorrow(): void { if (!this.selected || this.executionForm.invalid) { this.modalError = 'Informe a duração no formato hh:mm.'; return; } const duration = this.durationMinutes(this.executionForm.controls.duration.value || ''); if (duration === undefined) { this.modalError = 'Informe a duração no formato hh:mm.'; return; } this.act(this.api.continueOccurrenceTomorrow(this.selected.id, { actualDurationMinutes: duration, notes: this.executionForm.controls.notes.value || undefined })); }
   reschedule(): void { if (!this.selected || this.rescheduleForm.invalid) { this.modalError = 'Informe a nova data.'; return; } this.act(this.api.rescheduleOccurrence(this.selected.id, { scheduledDate: this.rescheduleForm.controls.scheduledDate.value || '', scheduledTime: this.rescheduleForm.controls.scheduledTime.value || undefined })); }
   deleteFromAgenda(): void { if (!this.selected) return; this.acting = true; this.modalError = ''; this.api.deleteOccurrence(this.selected.id, 'current').subscribe({ next: () => { this.acting = false; this.closeModal(); this.load(); }, error: (response: { error?: { message?: string | string[] } }) => { this.acting = false; this.modalError = this.errorMessage(response, 'Não foi possível excluir a ocorrência da agenda.'); } }); }
-  generate(): void { if (this.generationForm.invalid) { this.modalError = 'Informe o intervalo da geração.'; return; } const raw = this.generationForm.getRawValue(); this.acting = true; this.api.generateAgenda({ from: raw.from || '', to: raw.to || '' }).subscribe({ next: (result) => { this.acting = false; this.generationNotice = this.generationSummary(result); this.closeModal(); this.load(); }, error: () => { this.acting = false; this.modalError = 'Não foi possível gerar a agenda.'; } }); }
+  generate(): void { if (this.generationForm.invalid) { this.modalError = 'Informe o intervalo da geração.'; return; } const raw = this.generationForm.getRawValue(); this.acting = true; this.api.generateAgenda({ from: raw.from || '', to: raw.to || '' }).subscribe({ next: (result) => { this.acting = false; this.generationNotice = this.generationSummary(result); this.generationDetails = this.generationSuppressedDetails(result); this.closeModal(); this.load(); }, error: () => { this.acting = false; this.modalError = 'Não foi possível gerar a agenda.'; } }); }
   clearMonth(): void { this.acting = true; this.modalError = ''; const month = this.dateKey(this.firstOfMonth(this.current)).slice(0, 7); this.api.clearAgendaMonth(month).subscribe({ next: () => { this.acting = false; this.closeModal(); this.load(); }, error: (response: { error?: { message?: string | string[] } }) => { this.acting = false; this.modalError = this.errorMessage(response, 'Não foi possível limpar a agenda do mês.'); } }); }
+  loadExclusions(): void { if (this.restorePeriodForm.invalid) { this.exclusions = undefined; return; } const raw = this.restorePeriodForm.getRawValue(); const from = raw.from || ''; const to = raw.to || ''; if (to < from) { this.exclusions = undefined; this.modalError = 'A data final não pode ser anterior à data inicial.'; return; } this.modalError = ''; this.loadingExclusions = true; this.api.occurrenceExclusions({ from, to }).subscribe({ next: (exclusions) => { if (this.restorePeriodForm.getRawValue().from === from && this.restorePeriodForm.getRawValue().to === to) this.exclusions = exclusions; this.loadingExclusions = false; }, error: (response: { error?: { message?: string | string[] } }) => { this.loadingExclusions = false; this.modalError = this.errorMessage(response, 'Não foi possível consultar as exclusões persistentes.'); } }); }
+  restorePeriod(): void { if (this.restorePeriodForm.invalid) { this.modalError = 'Informe o intervalo da restauração.'; return; } const raw = this.restorePeriodForm.getRawValue(); const from = raw.from || ''; const to = raw.to || ''; if (to < from) { this.modalError = 'A data final não pode ser anterior à data inicial.'; return; } this.acting = true; this.modalError = ''; this.api.restoreOccurrencePeriod({ from, to, confirm: true }).subscribe({ next: (result) => { this.acting = false; this.generationNotice = this.restorePeriodSummary(result); this.generationDetails = []; this.closeModal(); this.load(); }, error: (response: { error?: { message?: string | string[] } }) => { this.acting = false; this.modalError = this.errorMessage(response, 'Não foi possível restaurar o período.'); } }); }
   private act(request: ReturnType<TaskPlanApiService['startOccurrence']>): void { this.acting = true; this.modalError = ''; request.subscribe({ next: (updated) => { this.acting = false; this.replace(updated); this.selected = updated; this.modal = 'details'; this.load(); }, error: (response: { error?: { message?: string | string[] } }) => { this.acting = false; this.modalError = this.errorMessage(response, 'A operação não foi concluída.'); } }); }
   private errorMessage(response: { error?: { message?: string | string[] } }, fallback: string): string { const message = response.error?.message; return Array.isArray(message) ? message.join(' ') : message || fallback; }
-  private generationSummary(result: OccurrenceGenerationResult): string { const parts = [`${result.occurrencesCreated} ${result.occurrencesCreated === 1 ? 'ocorrência criada' : 'ocorrências criadas'}`]; if (result.duplicatesSkipped) parts.push(`${result.duplicatesSkipped} já existentes`); if (result.occurrencesExcluded) parts.push(`${result.occurrencesExcluded} excluídas intencionalmente`); return `Geração concluída: ${parts.join('; ')}.`; }
+  private generationSummary(result: OccurrenceGenerationResult): string { const parts = [`${result.occurrencesCreated} ${result.occurrencesCreated === 1 ? 'ocorrência criada' : 'ocorrências criadas'}`]; if (result.duplicatesSkipped) parts.push(`${result.duplicatesSkipped} já existentes`); if (result.occurrencesExcluded) parts.push(`${result.occurrencesExcluded} excluídas intencionalmente`); if (result.occurrencesSuppressedByCollision) parts.push(`${result.occurrencesSuppressedByCollision} suprimidas por colisão de data agendada`); return `Geração concluída: ${parts.join('; ')}.`; }
+  private generationSuppressedDetails(result: OccurrenceGenerationResult): string[] { return [ ...(result.excludedOccurrences || []).map((occurrence) => `${this.displayDate(occurrence.originalDate)} — ${occurrence.taskName}: excluída intencionalmente.`), ...(result.collisionSuppressedOccurrences || []).map((occurrence) => `${this.displayDate(occurrence.originalDate)} → ${this.displayDate(occurrence.scheduledDate)} — ${occurrence.taskName}: suprimida por colisão de data agendada.`), ]; }
+  private restorePeriodSummary(result: OccurrencePeriodRestoreResult): string { const parts = [`${result.occurrencesRemoved} ${result.occurrencesRemoved === 1 ? 'ocorrência pendente removida' : 'ocorrências pendentes removidas'}`, `${result.exclusionsRestored} ${result.exclusionsRestored === 1 ? 'exclusão persistente removida' : 'exclusões persistentes removidas'}`]; if (result.operationalOccurrencesPreserved) parts.push(`${result.operationalOccurrencesPreserved} ocorrências operacionais preservadas`); return `Período restaurado: ${parts.join('; ')}.`; }
+  private displayDate(value: string): string { const [year, month, day] = value.slice(0, 10).split('-'); return `${day}/${month}/${year}`; }
   private replace(updated: Occurrence): void { const list = this.events.get(updated.scheduledDate.slice(0, 10)) || []; this.events.set(updated.scheduledDate.slice(0, 10), list.map((item) => item.id === updated.id ? updated : item)); }
   private openModal(mode: ModalMode): void { this.lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : undefined; this.modal = mode; this.modalError = ''; setTimeout(() => (document.querySelector('.occurrence-modal input, .occurrence-modal select, .occurrence-modal textarea, .occurrence-modal button') as HTMLElement | null)?.focus()); }
   private durationMinutes(value: string): number | undefined { const match = /^(\d{1,2}):([0-5]\d)$/.exec(value); if (!match) return undefined; const minutes = Number(match[1]) * 60 + Number(match[2]); return minutes <= 1440 ? minutes : undefined; }
