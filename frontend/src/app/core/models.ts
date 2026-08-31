@@ -14,6 +14,7 @@ export interface OccurrenceLink { id: string; scheduledDate: string; status: Occ
 export interface Occurrence { id: string; taskId: string; responsibleUserId?: string | null; executedByUserId?: string | null; continuationOfId?: string | null; scheduledDate: string; originalDate: string; scheduledTime?: string | null; status: OccurrenceStatus; result?: OccurrenceResult | null; actualDurationMinutes?: number | null; notes?: string | null; overdue: boolean; canOperate: boolean; task: Task; responsibleUser?: User | null; executedByUser?: User | null; continuationOf?: OccurrenceLink | null; continuedBy?: OccurrenceLink | null; }
 export interface CalendarDay { date: string; total: number; pending: number; inProgress: number; completed: number; failed: number; overdue: number; occurrences: Occurrence[]; }
 export interface CalendarResponse { from: string; to: string; total: number; days: CalendarDay[]; }
+export interface OccurrenceGenerationResult { from: string; to: string; tasksProcessed: number; occurrencesAttempted: number; occurrencesCreated: number; duplicatesSkipped: number; occurrencesExcluded: number; }
 export interface DashboardSummary { totals: { pending: number; inProgress: number; completed: number; failed: number; overdue: number }; today: { date: string; total: number; occurrences: Occurrence[] }; nextOccurrences: Occurrence[]; }
 export interface Pagination { page: number; limit: number; total: number; totalPages: number; }
 export interface PaginatedResponse<T> { data: T[]; pagination: Pagination; }

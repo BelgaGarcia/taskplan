@@ -1114,7 +1114,8 @@ PARTIAL
   "tasksProcessed": 1,
   "occurrencesAttempted": 21,
   "occurrencesCreated": 21,
-  "duplicatesSkipped": 0
+  "duplicatesSkipped": 0,
+  "occurrencesExcluded": 0
 }
 ```
 
@@ -1124,7 +1125,8 @@ Executando novamente:
 {
   "occurrencesAttempted": 21,
   "occurrencesCreated": 0,
-  "duplicatesSkipped": 21
+  "duplicatesSkipped": 21,
+  "occurrencesExcluded": 0
 }
 ```
 
@@ -1135,6 +1137,10 @@ taskId + originalDate
 ```
 
 Portanto, a geração é idempotente para a mesma tarefa/data.
+
+`occurrencesExcluded` informa quantas datas foram mantidas fora da agenda por
+exclusões persistentes feitas anteriormente. Essas exclusões não são
+duplicidades e a geração não as recria automaticamente.
 
 ---
 

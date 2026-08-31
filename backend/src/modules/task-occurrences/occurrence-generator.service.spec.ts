@@ -74,6 +74,51 @@ describe('OccurrenceGeneratorService', () => {
     );
   });
 
+  it('reports occurrences intentionally skipped by persistent exclusions', async () => {
+    const createMany = jest.fn().mockResolvedValue({ count: 1 });
+    const service = new OccurrenceGeneratorService({
+      task: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'task-1',
+            startDate: new Date('2026-09-01T00:00:00.000Z'),
+            endDate: null,
+            scheduledTime: null,
+            responsibleUserId: null,
+            advanceOnNonBusinessDay: false,
+            periodicity: { active: true, type: 'DAILY', interval: 1 },
+          },
+        ]),
+      },
+      taskOccurrence: { createMany },
+      taskOccurrenceExclusion: {
+        findMany: jest
+          .fn()
+          .mockResolvedValue([
+            { originalDate: new Date('2026-09-02T00:00:00.000Z') },
+          ]),
+      },
+    } as never);
+
+    await expect(service.generate('2026-09-01', '2026-09-02')).resolves.toEqual(
+      expect.objectContaining({
+        occurrencesAttempted: 1,
+        occurrencesCreated: 1,
+        duplicatesSkipped: 0,
+        occurrencesExcluded: 1,
+      }),
+    );
+    expect(createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: [
+          expect.objectContaining({
+            originalDate: new Date('2026-09-01T00:00:00.000Z'),
+          }),
+        ],
+      }),
+    );
+  });
+
   it('generates only valid dates from a monthly day range in February', () => {
     const service = new OccurrenceGeneratorService({} as never);
     const task = {
