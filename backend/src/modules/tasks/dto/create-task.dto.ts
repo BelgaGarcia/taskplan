@@ -122,4 +122,13 @@ export class CreateTaskDto {
   @IsOptional()
   @IsBoolean()
   advanceOnNonBusinessDay?: boolean;
+
+  @ApiPropertyOptional({
+    default: false,
+    description:
+      'Suprimir uma data original quando o ajuste de dia nÃ£o Ãºtil colidir com outra ocorrÃªncia da mesma tarefa.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  suppressScheduledDateCollisions?: boolean;
 }

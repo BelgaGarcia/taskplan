@@ -215,6 +215,133 @@ export class TaskOccurrencesService {
     });
   }
 
+  async listExclusions(fromValue: string, toValue: string, user: JwtPayload) {
+    this.assertAdminForPeriodRestore(user);
+
+    const [from, to] = this.periodRange(fromValue, toValue);
+    const data = await this.prisma.taskOccurrenceExclusion.findMany({
+      where: { originalDate: { gte: from, lte: to } },
+      orderBy: [{ originalDate: 'asc' }, { createdAt: 'asc' }],
+      select: {
+        id: true,
+        taskId: true,
+        originalDate: true,
+        createdAt: true,
+        task: { select: { name: true } },
+        createdByUser: { select: { id: true, name: true } },
+      },
+    });
+
+    return { from: fromValue, to: toValue, total: data.length, data };
+  }
+
+  async restorePeriod(fromValue: string, toValue: string, user: JwtPayload) {
+    this.assertAdminForPeriodRestore(user);
+
+    const [from, to] = this.periodRange(fromValue, toValue);
+
+    return this.prisma.$transaction(async (tx) => {
+      const [occurrences, exclusions] = await Promise.all([
+        tx.taskOccurrence.findMany({
+          where: { originalDate: { gte: from, lte: to } },
+          select: {
+            id: true,
+            taskId: true,
+            status: true,
+            notes: true,
+            startedAt: true,
+            completedAt: true,
+            executedByUserId: true,
+            result: true,
+            actualDurationMinutes: true,
+            continuationOfId: true,
+            continuedBy: { select: { id: true } },
+          },
+        }),
+        tx.taskOccurrenceExclusion.findMany({
+          where: { originalDate: { gte: from, lte: to } },
+          select: { taskId: true },
+        }),
+      ]);
+
+      const rescheduleAudits = occurrences.length
+        ? await tx.auditLog.findMany({
+            where: {
+              action: 'OCCURRENCE_RESCHEDULED',
+              entityType: 'TaskOccurrence',
+              entityId: { in: occurrences.map((occurrence) => occurrence.id) },
+            },
+            select: { entityId: true },
+          })
+        : [];
+      const rescheduledOccurrenceIds = new Set(
+        rescheduleAudits
+          .map((audit) => audit.entityId)
+          .filter((id): id is string => Boolean(id)),
+      );
+      const removableOccurrences = occurrences.filter(
+        (occurrence) =>
+          occurrence.status === TaskOccurrenceStatus.PENDING &&
+          !occurrence.notes?.trim() &&
+          occurrence.startedAt === null &&
+          occurrence.completedAt === null &&
+          occurrence.executedByUserId === null &&
+          occurrence.result === null &&
+          occurrence.actualDurationMinutes === null &&
+          occurrence.continuationOfId === null &&
+          occurrence.continuedBy === null &&
+          !rescheduledOccurrenceIds.has(occurrence.id),
+      );
+      const removableIds = removableOccurrences.map(
+        (occurrence) => occurrence.id,
+      );
+      const affectedTaskIds = Array.from(
+        new Set([
+          ...occurrences.map((occurrence) => occurrence.taskId),
+          ...exclusions.map((exclusion) => exclusion.taskId),
+        ]),
+      ).sort();
+
+      const [removedOccurrences, removedExclusions] = await Promise.all([
+        removableIds.length
+          ? tx.taskOccurrence.deleteMany({
+              where: { id: { in: removableIds } },
+            })
+          : Promise.resolve({ count: 0 }),
+        tx.taskOccurrenceExclusion.deleteMany({
+          where: { originalDate: { gte: from, lte: to } },
+        }),
+      ]);
+      const operationalOccurrencesPreserved =
+        occurrences.length - removedOccurrences.count;
+
+      await tx.auditLog.create({
+        data: {
+          actorUserId: user.sub,
+          action: 'OCCURRENCE_PERIOD_RESTORED',
+          entityType: 'TaskOccurrence',
+          metadata: {
+            from: fromValue,
+            to: toValue,
+            affectedTaskIds,
+            occurrencesRemoved: removedOccurrences.count,
+            exclusionsRestored: removedExclusions.count,
+            operationalOccurrencesPreserved,
+          },
+        },
+      });
+
+      return {
+        from: fromValue,
+        to: toValue,
+        affectedTaskIds,
+        occurrencesRemoved: removedOccurrences.count,
+        exclusionsRestored: removedExclusions.count,
+        operationalOccurrencesPreserved,
+      };
+    });
+  }
+
   async start(id: string, user: JwtPayload) {
     const occurrence = await this.findForOperation(id);
     await this.assertCanOperate(occurrence, user);
@@ -698,6 +825,27 @@ export class TaskOccurrencesService {
 
   private isAdmin(user: JwtPayload): boolean {
     return user.accessLevel === 'ADMIN';
+  }
+
+  private assertAdminForPeriodRestore(user: JwtPayload): void {
+    if (!this.isAdmin(user)) {
+      throw new ForbiddenException(
+        'A restauraÃ§Ã£o de perÃ­odo exige perfil administrador.',
+      );
+    }
+  }
+
+  private periodRange(fromValue: string, toValue: string): [Date, Date] {
+    const from = this.toDate(fromValue);
+    const to = this.toDate(toValue);
+
+    if (to < from) {
+      throw new BadRequestException(
+        'A data final nÃ£o pode ser anterior Ã  data inicial.',
+      );
+    }
+
+    return [from, to];
   }
 
   private countStatus(

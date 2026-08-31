@@ -34,6 +34,8 @@ import { TaskOccurrencesService } from './task-occurrences.service';
 import { CalendarQueryDto } from './dto/calendar-query.dto';
 import { ClearMonthQueryDto } from './dto/clear-month-query.dto';
 import { DeleteOccurrenceDto } from './dto/delete-occurrence.dto';
+import { ListOccurrenceExclusionsQueryDto } from './dto/list-occurrence-exclusions-query.dto';
+import { RestoreOccurrencePeriodDto } from './dto/restore-occurrence-period.dto';
 
 @ApiTags('Ocorrências de tarefas')
 @ApiBearerAuth()
@@ -52,6 +54,22 @@ export class TaskOccurrencesController {
     return this.generator.generate(dto.from, dto.to);
   }
 
+  @Post('restore-period')
+  @Roles('ADMIN')
+  @ApiBadRequestResponse({
+    description: 'Intervalo ou confirmaÃ§Ã£o invÃ¡lidos.',
+  })
+  @ApiOperation({
+    summary:
+      'Restaurar um perÃ­odo por data original para permitir nova geraÃ§Ã£o',
+  })
+  restorePeriod(
+    @Body() dto: RestoreOccurrencePeriodDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.restorePeriod(dto.from, dto.to, request.user!);
+  }
+
   @Delete('month')
   @Roles('ADMIN')
   @ApiBadRequestResponse({ description: 'Mês inválido.' })
@@ -63,6 +81,19 @@ export class TaskOccurrencesController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.service.clearMonth(query.month, request.user!);
+  }
+
+  @Get('exclusions')
+  @Roles('ADMIN')
+  @ApiBadRequestResponse({ description: 'Intervalo invÃ¡lido.' })
+  @ApiOperation({
+    summary: 'Listar exclusÃµes persistentes por data original',
+  })
+  exclusions(
+    @Query() query: ListOccurrenceExclusionsQueryDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.listExclusions(query.from, query.to, request.user!);
   }
 
   @Get('filter-options')

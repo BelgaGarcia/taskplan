@@ -896,7 +896,8 @@ As ocorrências representam as execuções dessa tarefa em datas específicas.
   "mandatory": true,
   "active": true,
   "displayOrder": 1,
-  "advanceOnNonBusinessDay": true
+  "advanceOnNonBusinessDay": true,
+  "suppressScheduledDateCollisions": false
 }
 ```
 
@@ -959,6 +960,15 @@ true
 ```
 
 uma ocorrência prevista para sábado, domingo ou feriado é antecipada para o último dia útil disponível.
+
+---
+
+### `suppressScheduledDateCollisions`
+
+Quando `true`, a tarefa mantém no máximo uma ocorrência por data agendada
+durante a geração. Use somente para rotinas cuja regra de negócio determine
+essa não duplicidade — como os checklists CPD configurados para antecipar dias
+não úteis. A opção não altera ocorrências já existentes.
 
 ---
 
@@ -1115,7 +1125,10 @@ PARTIAL
   "occurrencesAttempted": 21,
   "occurrencesCreated": 21,
   "duplicatesSkipped": 0,
-  "occurrencesExcluded": 0
+  "occurrencesExcluded": 0,
+  "occurrencesSuppressedByCollision": 0,
+  "excludedOccurrences": [],
+  "collisionSuppressedOccurrences": []
 }
 ```
 
@@ -1126,7 +1139,10 @@ Executando novamente:
   "occurrencesAttempted": 21,
   "occurrencesCreated": 0,
   "duplicatesSkipped": 21,
-  "occurrencesExcluded": 0
+  "occurrencesExcluded": 0,
+  "occurrencesSuppressedByCollision": 0,
+  "excludedOccurrences": [],
+  "collisionSuppressedOccurrences": []
 }
 ```
 
@@ -1141,6 +1157,59 @@ Portanto, a geração é idempotente para a mesma tarefa/data.
 `occurrencesExcluded` informa quantas datas foram mantidas fora da agenda por
 exclusões persistentes feitas anteriormente. Essas exclusões não são
 duplicidades e a geração não as recria automaticamente.
+
+`occurrencesSuppressedByCollision` informa quantas datas originais foram
+suprimidas porque uma tarefa configurada com
+`suppressScheduledDateCollisions: true` já possui uma ocorrência na mesma data
+agendada. `excludedOccurrences` e `collisionSuppressedOccurrences` detalham,
+respectivamente, a data original, a data agendada e a tarefa para cada omissão.
+Essa política é opt-in: a configuração padrão preserva ocorrências distintas
+mesmo que elas convirjam para a mesma data agendada.
+
+---
+
+## Restaurar período para nova geração (administrador)
+
+### `GET /api/task-occurrences/exclusions?from=YYYY-MM-DD&to=YYYY-MM-DD`
+
+Lista, por data original, as exclusões persistentes que serão removidas caso o
+administrador confirme a restauração. A resposta contém a tarefa, a data da
+exclusão e, quando disponível, o usuário que a criou.
+
+### `POST /api/task-occurrences/restore-period`
+
+Disponível apenas para administradores. A operação exige confirmação explícita:
+
+```json
+{
+  "from": "2026-09-01",
+  "to": "2026-09-30",
+  "confirm": true
+}
+```
+
+Ela remove somente exclusões persistentes e ocorrências cuja **data original**
+esteja no intervalo. Apenas ocorrências pendentes, sem execução, observação,
+reagendamento ou vínculo de continuação são removidas; ocorrências operacionais
+são preservadas. A ação é atômica e registra no histórico o ator, o intervalo,
+as tarefas afetadas e as contagens removidas/preservadas.
+
+Exemplo de resposta:
+
+```json
+{
+  "from": "2026-09-01",
+  "to": "2026-09-30",
+  "affectedTaskIds": ["UUID_DA_TAREFA"],
+  "occurrencesRemoved": 8,
+  "exclusionsRestored": 8,
+  "operationalOccurrencesPreserved": 0
+}
+```
+
+A limpeza mensal normal continua distinta: ela não remove exclusões
+persistentes. Use a restauração somente após revisar o intervalo e as exclusões
+listadas.
 
 ---
 
@@ -2199,6 +2268,8 @@ DELETE /api/tasks/:id
 
 ```text
 POST   /api/task-occurrences/generate
+GET    /api/task-occurrences/exclusions
+POST   /api/task-occurrences/restore-period
 
 GET    /api/task-occurrences
 GET    /api/task-occurrences/calendar

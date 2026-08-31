@@ -75,6 +75,61 @@ describe('OccurrenceGeneratorService', () => {
     );
   });
 
+  it('suppresses the Saturday occurrence when a task opts into scheduled-date collision suppression', async () => {
+    const createMany = jest.fn(({ data }: { data: unknown[] }) =>
+      Promise.resolve({ count: data.length }),
+    );
+    const service = new OccurrenceGeneratorService({
+      task: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'checklist-cpd-morning',
+            name: 'Checklist CPD Manhã',
+            startDate: new Date('2026-09-04T00:00:00.000Z'),
+            endDate: null,
+            scheduledTime: null,
+            responsibleUserId: null,
+            advanceOnNonBusinessDay: true,
+            suppressScheduledDateCollisions: true,
+            periodicity: { active: true, type: 'DAILY', interval: 1 },
+          },
+        ]),
+      },
+      taskOccurrence: {
+        createMany,
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      taskOccurrenceExclusion: { findMany: jest.fn().mockResolvedValue([]) },
+      holiday: { findMany: jest.fn().mockResolvedValue([]) },
+    } as never);
+
+    await expect(service.generate('2026-09-04', '2026-09-05')).resolves.toEqual(
+      expect.objectContaining({
+        occurrencesAttempted: 1,
+        occurrencesCreated: 1,
+        occurrencesSuppressedByCollision: 1,
+        collisionSuppressedOccurrences: [
+          {
+            taskId: 'checklist-cpd-morning',
+            taskName: 'Checklist CPD Manhã',
+            originalDate: '2026-09-05',
+            scheduledDate: '2026-09-04',
+          },
+        ],
+      }),
+    );
+    expect(createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: [
+          expect.objectContaining({
+            originalDate: new Date('2026-09-04T00:00:00.000Z'),
+            scheduledDate: new Date('2026-09-04T00:00:00.000Z'),
+          }),
+        ],
+      }),
+    );
+  });
+
   it('reports occurrences intentionally skipped by persistent exclusions', async () => {
     const createMany = jest.fn().mockResolvedValue({ count: 1 });
     const service = new OccurrenceGeneratorService({

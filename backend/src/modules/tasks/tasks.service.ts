@@ -36,6 +36,8 @@ export class TasksService {
         active: dto.active ?? true,
         displayOrder: dto.displayOrder ?? 0,
         advanceOnNonBusinessDay: dto.advanceOnNonBusinessDay ?? true,
+        suppressScheduledDateCollisions:
+          dto.suppressScheduledDateCollisions ?? false,
       },
       include: this.getRelations(),
     });
@@ -197,6 +199,9 @@ export class TasksService {
         }),
         ...(dto.advanceOnNonBusinessDay !== undefined && {
           advanceOnNonBusinessDay: dto.advanceOnNonBusinessDay,
+        }),
+        ...(dto.suppressScheduledDateCollisions !== undefined && {
+          suppressScheduledDateCollisions: dto.suppressScheduledDateCollisions,
         }),
       },
       include: this.getRelations(),

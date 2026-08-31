@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { RuntimeConfigService } from './runtime-config.service';
-import type { CalendarResponse, DashboardSummary, FilterOptions, Occurrence, OccurrenceGenerationResult, OccurrenceResult, PaginatedResponse, PositionHierarchy } from './models';
+import type { CalendarResponse, DashboardSummary, FilterOptions, Occurrence, OccurrenceExclusionList, OccurrenceGenerationResult, OccurrencePeriodRestoreResult, OccurrenceResult, PaginatedResponse, PositionHierarchy } from './models';
 
 export type QueryValue = string | number | boolean | null | undefined;
 export type Query = Record<string, QueryValue>;
@@ -35,6 +35,8 @@ export class TaskPlanApiService {
   generateAgenda(body: { from: string; to: string }): Observable<OccurrenceGenerationResult> { return this.http.post<OccurrenceGenerationResult>(this.url('task-occurrences/generate'), body); }
   deleteOccurrence(id: string, scope: 'current' | 'future'): Observable<{ id: string; scope: string; removedCount: number }> { return this.http.delete<{ id: string; scope: string; removedCount: number }>(this.url(`task-occurrences/${id}`), { params: { scope } }); }
   clearAgendaMonth(month: string): Observable<{ month: string; deleted: number }> { return this.http.delete<{ month: string; deleted: number }>(this.url('task-occurrences/month'), { params: { month } }); }
+  occurrenceExclusions(query: { from: string; to: string }): Observable<OccurrenceExclusionList> { return this.http.get<OccurrenceExclusionList>(this.url('task-occurrences/exclusions'), { params: this.params(query) }); }
+  restoreOccurrencePeriod(body: { from: string; to: string; confirm: true }): Observable<OccurrencePeriodRestoreResult> { return this.http.post<OccurrencePeriodRestoreResult>(this.url('task-occurrences/restore-period'), body); }
   positionHierarchy(): Observable<PositionHierarchy> { return this.fetch<PositionHierarchy>('positions/hierarchy'); }
   updatePositionHierarchy(inheritances: Array<{ positionId: string; inheritedPositionId: string }>): Observable<PositionHierarchy> { return this.http.patch<PositionHierarchy>(this.url('positions/hierarchy'), { inheritances }); }
   private url(path: string): string { return `${this.config.apiUrl}/${path}`; }

@@ -248,6 +248,7 @@ model Task {
   displayOrder Int     @default(0)
 
   advanceOnNonBusinessDay Boolean @default(true)
+  suppressScheduledDateCollisions Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

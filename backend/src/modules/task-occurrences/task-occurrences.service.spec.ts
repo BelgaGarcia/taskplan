@@ -84,6 +84,120 @@ describe('TaskOccurrencesService', () => {
     expect(transaction).not.toHaveBeenCalled();
   });
 
+  it('restores only pending, non-operational occurrences and their exclusions for an administrator', async () => {
+    const deleteOccurrences = jest.fn().mockResolvedValue({ count: 1 });
+    const deleteExclusions = jest.fn().mockResolvedValue({ count: 2 });
+    const createAudit = jest.fn().mockResolvedValue({});
+    const transaction = jest.fn((callback: (tx: never) => Promise<unknown>) =>
+      callback({
+        taskOccurrence: {
+          findMany: jest.fn().mockResolvedValue([
+            {
+              id: 'pending',
+              taskId: 'task-1',
+              status: TaskOccurrenceStatus.PENDING,
+              notes: null,
+              startedAt: null,
+              completedAt: null,
+              executedByUserId: null,
+              result: null,
+              actualDurationMinutes: null,
+              continuationOfId: null,
+              continuedBy: null,
+            },
+            {
+              id: 'continued',
+              taskId: 'task-1',
+              status: TaskOccurrenceStatus.PENDING,
+              notes: null,
+              startedAt: null,
+              completedAt: null,
+              executedByUserId: null,
+              result: null,
+              actualDurationMinutes: null,
+              continuationOfId: null,
+              continuedBy: { id: 'continuation' },
+            },
+            {
+              id: 'completed',
+              taskId: 'task-2',
+              status: TaskOccurrenceStatus.COMPLETED,
+              notes: 'Executada',
+              startedAt: new Date(),
+              completedAt: new Date(),
+              executedByUserId: 'operator-1',
+              result: 'SUCCESS',
+              actualDurationMinutes: 15,
+              continuationOfId: null,
+              continuedBy: null,
+            },
+          ]),
+          deleteMany: deleteOccurrences,
+        },
+        taskOccurrenceExclusion: {
+          findMany: jest
+            .fn()
+            .mockResolvedValue([{ taskId: 'task-1' }, { taskId: 'task-3' }]),
+          deleteMany: deleteExclusions,
+        },
+        auditLog: {
+          findMany: jest.fn().mockResolvedValue([{ entityId: 'rescheduled' }]),
+          create: createAudit,
+        },
+      } as never),
+    );
+    const service = new TaskOccurrencesService(
+      { $transaction: transaction } as never,
+      { getInheritedPositionIds: jest.fn().mockResolvedValue([]) } as never,
+    );
+
+    await expect(
+      service.restorePeriod('2026-09-01', '2026-09-30', admin),
+    ).resolves.toEqual({
+      from: '2026-09-01',
+      to: '2026-09-30',
+      affectedTaskIds: ['task-1', 'task-2', 'task-3'],
+      occurrencesRemoved: 1,
+      exclusionsRestored: 2,
+      operationalOccurrencesPreserved: 2,
+    });
+    expect(deleteOccurrences).toHaveBeenCalledWith({
+      where: { id: { in: ['pending'] } },
+    });
+    expect(deleteExclusions).toHaveBeenCalledWith({
+      where: {
+        originalDate: {
+          gte: new Date('2026-09-01T00:00:00.000Z'),
+          lte: new Date('2026-09-30T00:00:00.000Z'),
+        },
+      },
+    });
+    expect(createAudit).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        actorUserId: 'admin-1',
+        action: 'OCCURRENCE_PERIOD_RESTORED',
+        metadata: expect.objectContaining({
+          occurrencesRemoved: 1,
+          exclusionsRestored: 2,
+          operationalOccurrencesPreserved: 2,
+        }),
+      }),
+    });
+  });
+
+  it('does not let an operator restore a period', async () => {
+    const transaction = jest.fn();
+    const service = new TaskOccurrencesService(
+      { $transaction: transaction } as never,
+      { getInheritedPositionIds: jest.fn().mockResolvedValue([]) } as never,
+    );
+
+    await expect(
+      service.restorePeriod('2026-09-01', '2026-09-30', operator),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
   it('records the JWT user as executor when the responsible operator starts an occurrence', async () => {
     const findUnique = jest.fn().mockResolvedValue(occurrence());
     const updateMany = jest

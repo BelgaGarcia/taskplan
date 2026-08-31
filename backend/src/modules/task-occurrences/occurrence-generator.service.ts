@@ -10,6 +10,13 @@ type TaskWithPeriodicity = Prisma.TaskGetPayload<{
 
 type OccurrenceRow = Prisma.TaskOccurrenceCreateManyInput;
 
+type SuppressedOccurrence = {
+  taskId: string;
+  taskName: string;
+  originalDate: string;
+  scheduledDate: string;
+};
+
 @Injectable()
 export class OccurrenceGeneratorService {
   constructor(private readonly prisma: PrismaService) {}
@@ -29,6 +36,9 @@ export class OccurrenceGeneratorService {
     let attempted = 0;
     let created = 0;
     let excluded = 0;
+    let collisions = 0;
+    const excludedOccurrences: SuppressedOccurrence[] = [];
+    const collisionSuppressedOccurrences: SuppressedOccurrence[] = [];
 
     for (const task of tasks) {
       const originalDates = await this.generateOriginalDates(task, from, to);
@@ -63,15 +73,26 @@ export class OccurrenceGeneratorService {
       const excludedOriginalDates = new Set(
         exclusions.map((item) => item.originalDate.getTime()),
       );
-      // Different original dates must remain distinct occurrences even when
-      // their business-day adjustment places them on the same scheduled date.
-      // Idempotence is guaranteed by the unique taskId/originalDate pair.
-      const rowsToCreate = rows.filter(
-        (row) =>
-          !excludedOriginalDates.has(new Date(row.originalDate).getTime()),
-      );
+      const rowsAfterExclusions = rows.filter((row) => {
+        const isExcluded = excludedOriginalDates.has(
+          new Date(row.originalDate).getTime(),
+        );
+        if (isExcluded) {
+          excludedOccurrences.push(this.suppressedOccurrence(task, row));
+        }
+        return !isExcluded;
+      });
 
-      excluded += rows.length - rowsToCreate.length;
+      excluded += rows.length - rowsAfterExclusions.length;
+      const rowsToCreate = task.suppressScheduledDateCollisions
+        ? await this.removeScheduledDateCollisions(
+            task,
+            rowsAfterExclusions,
+            collisionSuppressedOccurrences,
+          )
+        : rowsAfterExclusions;
+
+      collisions += rowsAfterExclusions.length - rowsToCreate.length;
       attempted += rowsToCreate.length;
 
       const result = await this.prisma.taskOccurrence.createMany({
@@ -90,6 +111,9 @@ export class OccurrenceGeneratorService {
       occurrencesCreated: created,
       duplicatesSkipped: attempted - created,
       occurrencesExcluded: excluded,
+      occurrencesSuppressedByCollision: collisions,
+      excludedOccurrences,
+      collisionSuppressedOccurrences,
     };
   }
 
@@ -101,6 +125,9 @@ export class OccurrenceGeneratorService {
         occurrencesCreated: 0,
         duplicatesSkipped: 0,
         occurrencesExcluded: 0,
+        occurrencesSuppressedByCollision: 0,
+        excludedOccurrences: [],
+        collisionSuppressedOccurrences: [],
       };
     }
 
@@ -137,6 +164,79 @@ export class OccurrenceGeneratorService {
         periodicity: true,
       },
     });
+  }
+
+  private async removeScheduledDateCollisions(
+    task: TaskWithPeriodicity,
+    rows: OccurrenceRow[],
+    suppressed: SuppressedOccurrence[],
+  ): Promise<OccurrenceRow[]> {
+    if (rows.length === 0) {
+      return rows;
+    }
+
+    const existingOccurrences = await this.prisma.taskOccurrence.findMany({
+      where: {
+        taskId: task.id,
+        scheduledDate: {
+          in: rows.map((row) => new Date(row.scheduledDate)),
+        },
+      },
+      select: { originalDate: true, scheduledDate: true },
+    });
+    const originalDatesByScheduledDate = new Map<string, Set<string>>();
+
+    for (const occurrence of existingOccurrences) {
+      this.addScheduledDate(
+        originalDatesByScheduledDate,
+        occurrence.scheduledDate,
+        occurrence.originalDate,
+      );
+    }
+
+    return rows.filter((row) => {
+      const scheduledDate = new Date(row.scheduledDate);
+      const originalDate = new Date(row.originalDate);
+      const scheduledKey = scheduledDate.toISOString();
+      const originalKey = originalDate.toISOString();
+      const originalDates = originalDatesByScheduledDate.get(scheduledKey);
+
+      if (originalDates && !originalDates.has(originalKey)) {
+        suppressed.push(this.suppressedOccurrence(task, row));
+        return false;
+      }
+
+      this.addScheduledDate(
+        originalDatesByScheduledDate,
+        scheduledDate,
+        originalDate,
+      );
+      return true;
+    });
+  }
+
+  private addScheduledDate(
+    originalDatesByScheduledDate: Map<string, Set<string>>,
+    scheduledDate: Date,
+    originalDate: Date,
+  ): void {
+    const scheduledKey = scheduledDate.toISOString();
+    const originalDates =
+      originalDatesByScheduledDate.get(scheduledKey) ?? new Set<string>();
+    originalDates.add(originalDate.toISOString());
+    originalDatesByScheduledDate.set(scheduledKey, originalDates);
+  }
+
+  private suppressedOccurrence(
+    task: TaskWithPeriodicity,
+    row: OccurrenceRow,
+  ): SuppressedOccurrence {
+    return {
+      taskId: task.id,
+      taskName: task.name,
+      originalDate: new Date(row.originalDate).toISOString().slice(0, 10),
+      scheduledDate: new Date(row.scheduledDate).toISOString().slice(0, 10),
+    };
   }
 
   private async generateOriginalDates(
