@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { RuntimeConfigService } from './runtime-config.service';
-import type { CalendarResponse, DashboardSummary, FilterOptions, Occurrence, OccurrenceResult, PaginatedResponse, PositionHierarchy } from './models';
+import type { CalendarResponse, DashboardSummary, FilterOptions, Occurrence, OccurrenceGenerationResult, OccurrenceResult, PaginatedResponse, PositionHierarchy } from './models';
 
 export type QueryValue = string | number | boolean | null | undefined;
 export type Query = Record<string, QueryValue>;
@@ -32,7 +32,7 @@ export class TaskPlanApiService {
   completeOccurrence(id: string, body: { result: OccurrenceResult; actualDurationMinutes?: number; notes?: string }): Observable<Occurrence> { return this.http.patch<Occurrence>(this.url(`task-occurrences/${id}/complete`), body); }
   continueOccurrenceTomorrow(id: string, body: { actualDurationMinutes?: number; notes?: string }): Observable<Occurrence> { return this.http.patch<Occurrence>(this.url(`task-occurrences/${id}/continue-tomorrow`), body); }
   rescheduleOccurrence(id: string, body: { scheduledDate: string; scheduledTime?: string }): Observable<Occurrence> { return this.http.patch<Occurrence>(this.url(`task-occurrences/${id}/reschedule`), body); }
-  generateAgenda(body: { from: string; to: string }): Observable<object> { return this.http.post(this.url('task-occurrences/generate'), body); }
+  generateAgenda(body: { from: string; to: string }): Observable<OccurrenceGenerationResult> { return this.http.post<OccurrenceGenerationResult>(this.url('task-occurrences/generate'), body); }
   deleteOccurrence(id: string, scope: 'current' | 'future'): Observable<{ id: string; scope: string; removedCount: number }> { return this.http.delete<{ id: string; scope: string; removedCount: number }>(this.url(`task-occurrences/${id}`), { params: { scope } }); }
   clearAgendaMonth(month: string): Observable<{ month: string; deleted: number }> { return this.http.delete<{ month: string; deleted: number }>(this.url('task-occurrences/month'), { params: { month } }); }
   positionHierarchy(): Observable<PositionHierarchy> { return this.fetch<PositionHierarchy>('positions/hierarchy'); }

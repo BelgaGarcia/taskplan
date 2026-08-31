@@ -49,6 +49,7 @@ describe('CalendarComponent', () => {
       'occurrenceOptions',
       'clearAgendaMonth',
       'continueOccurrenceTomorrow',
+      'generateAgenda',
     ]);
     api.calendar.and.returnValue(of(response));
     api.occurrenceOptions.and.returnValue(
@@ -56,6 +57,17 @@ describe('CalendarComponent', () => {
     );
     api.clearAgendaMonth.and.returnValue(
       of({ month: '2026-08', deleted: 5 }),
+    );
+    api.generateAgenda.and.returnValue(
+      of({
+        from: '2026-09-01',
+        to: '2026-09-30',
+        tasksProcessed: 1,
+        occurrencesAttempted: 3,
+        occurrencesCreated: 1,
+        duplicatesSkipped: 1,
+        occurrencesExcluded: 1,
+      }),
     );
 
     await TestBed.configureTestingModule({
@@ -139,6 +151,20 @@ describe('CalendarComponent', () => {
 
     expect(api.clearAgendaMonth).toHaveBeenCalledOnceWith('2026-08');
     expect(api.calendar).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports created, duplicate, and intentionally excluded occurrences after generation', () => {
+    component.generationForm.setValue({ from: '2026-09-01', to: '2026-09-30' });
+
+    component.generate();
+
+    expect(api.generateAgenda).toHaveBeenCalledOnceWith({
+      from: '2026-09-01',
+      to: '2026-09-30',
+    });
+    expect(component.generationNotice).toBe(
+      'Geração concluída: 1 ocorrência criada; 1 já existentes; 1 excluídas intencionalmente.',
+    );
   });
 
   it('sends duration and notes when continuing an occurrence tomorrow', () => {

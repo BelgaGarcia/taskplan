@@ -13,6 +13,7 @@ import type {
   CalendarResponse,
   FilterOptions,
   Occurrence,
+  OccurrenceGenerationResult,
   OccurrenceResult,
 } from '../core/models';
 import { IconComponent } from '../shared/icon.component';
@@ -64,7 +65,7 @@ type DayEventLayout = {
           </div>
         </div>
         <form *ngIf="filtersOpen" class="mobile-filters" [formGroup]="filters"><label>Função<select formControlName="functionId" (change)="load()"><option value="">Todas</option><option *ngFor="let option of options.functions" [value]="option.id">{{ option.name }}</option></select></label><label>Usuário<select formControlName="responsibleUserId" (change)="load()"><option value="">Todos</option><option *ngFor="let option of options.users" [value]="option.id">{{ option.name }}</option></select></label><label>Status<select formControlName="status" (change)="load()"><option value="">Todos</option><option *ngFor="let status of options.statuses" [value]="status">{{ statusLabel(status) }}</option></select></label></form>
-        <p *ngIf="error" class="form-alert error">{{ error }}</p><div *ngIf="loading" class="loading-block">Carregando agenda…</div>
+        <p *ngIf="error" class="form-alert error">{{ error }}</p><p *ngIf="generationNotice" class="form-alert success">{{ generationNotice }}</p><div *ngIf="loading" class="loading-block">Carregando agenda…</div>
         <ng-container *ngIf="!loading">
           <ng-container *ngIf="view === 'day'; else calendarGrid">
             <section class="day-calendar" [attr.aria-label]="'Agenda de ' + (current | date:'dd/MM/yyyy')"><header>{{ dayLabel }}</header><div class="day-time-grid"><div class="hour-row" *ngFor="let hour of timeSlots"><time>{{ hour }}</time></div><button type="button" class="day-event" *ngFor="let event of dayEventLayouts(current)" [class]="'day-event ' + statusTone(event.occurrence.status)" [style.top.px]="event.top" [style.height.px]="event.height" [style.left.%]="event.left" [style.width.%]="event.width" [attr.aria-label]="event.occurrence.scheduledTime + ' ' + event.occurrence.task.name" (click)="openOccurrence(event.occurrence)"><span>{{ event.occurrence.scheduledTime }}</span><b>{{ event.occurrence.task.name }}</b><small>{{ event.occurrence.task.function?.name || 'Sem função' }}</small></button><div *ngIf="showCurrentTime" class="current-time-line" [style.top.%]="currentTimePosition"><i></i><span class="sr-only">Horário atual</span></div></div><p *ngIf="!timedEventsFor(current).length" class="day-empty-state">Sem ocorrências com horário neste dia.</p></section>
@@ -148,6 +149,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
   acting = false;
   error = '';
   modalError = '';
+  generationNotice = '';
   private events = new Map<string, Occurrence[]>();
   private lastFocused?: HTMLElement;
   readonly weekdays = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
@@ -239,10 +241,11 @@ export class CalendarComponent implements OnInit, OnDestroy {
   continueTomorrow(): void { if (!this.selected || this.executionForm.invalid) { this.modalError = 'Informe a duração no formato hh:mm.'; return; } const duration = this.durationMinutes(this.executionForm.controls.duration.value || ''); if (duration === undefined) { this.modalError = 'Informe a duração no formato hh:mm.'; return; } this.act(this.api.continueOccurrenceTomorrow(this.selected.id, { actualDurationMinutes: duration, notes: this.executionForm.controls.notes.value || undefined })); }
   reschedule(): void { if (!this.selected || this.rescheduleForm.invalid) { this.modalError = 'Informe a nova data.'; return; } this.act(this.api.rescheduleOccurrence(this.selected.id, { scheduledDate: this.rescheduleForm.controls.scheduledDate.value || '', scheduledTime: this.rescheduleForm.controls.scheduledTime.value || undefined })); }
   deleteFromAgenda(): void { if (!this.selected) return; this.acting = true; this.modalError = ''; this.api.deleteOccurrence(this.selected.id, 'current').subscribe({ next: () => { this.acting = false; this.closeModal(); this.load(); }, error: (response: { error?: { message?: string | string[] } }) => { this.acting = false; this.modalError = this.errorMessage(response, 'Não foi possível excluir a ocorrência da agenda.'); } }); }
-  generate(): void { if (this.generationForm.invalid) { this.modalError = 'Informe o intervalo da geração.'; return; } const raw = this.generationForm.getRawValue(); this.acting = true; this.api.generateAgenda({ from: raw.from || '', to: raw.to || '' }).subscribe({ next: () => { this.acting = false; this.closeModal(); this.load(); }, error: () => { this.acting = false; this.modalError = 'Não foi possível gerar a agenda.'; } }); }
+  generate(): void { if (this.generationForm.invalid) { this.modalError = 'Informe o intervalo da geração.'; return; } const raw = this.generationForm.getRawValue(); this.acting = true; this.api.generateAgenda({ from: raw.from || '', to: raw.to || '' }).subscribe({ next: (result) => { this.acting = false; this.generationNotice = this.generationSummary(result); this.closeModal(); this.load(); }, error: () => { this.acting = false; this.modalError = 'Não foi possível gerar a agenda.'; } }); }
   clearMonth(): void { this.acting = true; this.modalError = ''; const month = this.dateKey(this.firstOfMonth(this.current)).slice(0, 7); this.api.clearAgendaMonth(month).subscribe({ next: () => { this.acting = false; this.closeModal(); this.load(); }, error: (response: { error?: { message?: string | string[] } }) => { this.acting = false; this.modalError = this.errorMessage(response, 'Não foi possível limpar a agenda do mês.'); } }); }
   private act(request: ReturnType<TaskPlanApiService['startOccurrence']>): void { this.acting = true; this.modalError = ''; request.subscribe({ next: (updated) => { this.acting = false; this.replace(updated); this.selected = updated; this.modal = 'details'; this.load(); }, error: (response: { error?: { message?: string | string[] } }) => { this.acting = false; this.modalError = this.errorMessage(response, 'A operação não foi concluída.'); } }); }
   private errorMessage(response: { error?: { message?: string | string[] } }, fallback: string): string { const message = response.error?.message; return Array.isArray(message) ? message.join(' ') : message || fallback; }
+  private generationSummary(result: OccurrenceGenerationResult): string { const parts = [`${result.occurrencesCreated} ${result.occurrencesCreated === 1 ? 'ocorrência criada' : 'ocorrências criadas'}`]; if (result.duplicatesSkipped) parts.push(`${result.duplicatesSkipped} já existentes`); if (result.occurrencesExcluded) parts.push(`${result.occurrencesExcluded} excluídas intencionalmente`); return `Geração concluída: ${parts.join('; ')}.`; }
   private replace(updated: Occurrence): void { const list = this.events.get(updated.scheduledDate.slice(0, 10)) || []; this.events.set(updated.scheduledDate.slice(0, 10), list.map((item) => item.id === updated.id ? updated : item)); }
   private openModal(mode: ModalMode): void { this.lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : undefined; this.modal = mode; this.modalError = ''; setTimeout(() => (document.querySelector('.occurrence-modal input, .occurrence-modal select, .occurrence-modal textarea, .occurrence-modal button') as HTMLElement | null)?.focus()); }
   private durationMinutes(value: string): number | undefined { const match = /^(\d{1,2}):([0-5]\d)$/.exec(value); if (!match) return undefined; const minutes = Number(match[1]) * 60 + Number(match[2]); return minutes <= 1440 ? minutes : undefined; }

@@ -28,6 +28,7 @@ export class OccurrenceGeneratorService {
 
     let attempted = 0;
     let created = 0;
+    let excluded = 0;
 
     for (const task of tasks) {
       const originalDates = await this.generateOriginalDates(task, from, to);
@@ -70,6 +71,7 @@ export class OccurrenceGeneratorService {
           !excludedOriginalDates.has(new Date(row.originalDate).getTime()),
       );
 
+      excluded += rows.length - rowsToCreate.length;
       attempted += rowsToCreate.length;
 
       const result = await this.prisma.taskOccurrence.createMany({
@@ -87,6 +89,7 @@ export class OccurrenceGeneratorService {
       occurrencesAttempted: attempted,
       occurrencesCreated: created,
       duplicatesSkipped: attempted - created,
+      occurrencesExcluded: excluded,
     };
   }
 
@@ -97,6 +100,7 @@ export class OccurrenceGeneratorService {
         occurrencesAttempted: 0,
         occurrencesCreated: 0,
         duplicatesSkipped: 0,
+        occurrencesExcluded: 0,
       };
     }
 
