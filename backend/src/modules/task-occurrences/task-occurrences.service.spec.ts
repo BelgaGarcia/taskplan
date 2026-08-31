@@ -35,9 +35,11 @@ describe('TaskOccurrencesService', () => {
   it('clears and audits every occurrence in the requested month for an administrator', async () => {
     const deleteMany = jest.fn().mockResolvedValue({ count: 4 });
     const createAudit = jest.fn().mockResolvedValue({});
+    const upsertExclusion = jest.fn();
     const transaction = jest.fn((callback: (tx: never) => Promise<unknown>) =>
       callback({
         taskOccurrence: { deleteMany },
+        taskOccurrenceExclusion: { upsert: upsertExclusion },
         auditLog: { create: createAudit },
       } as never),
     );
@@ -66,6 +68,7 @@ describe('TaskOccurrencesService', () => {
         metadata: { month: '2026-08', deleted: 4 },
       },
     });
+    expect(upsertExclusion).not.toHaveBeenCalled();
   });
 
   it('does not let an operator clear a month', async () => {

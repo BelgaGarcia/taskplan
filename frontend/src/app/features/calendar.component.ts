@@ -87,7 +87,7 @@ type DayEventLayout = {
           <ng-container *ngIf="modal === 'clearMonth'; else nonClearMonthModal">
             <tp-icon name="warning"></tp-icon><p class="eyebrow">Administração</p><h2>Limpar agenda de {{ monthName(current) }}?</h2>
             <p>Todas as ocorrências desse mês, inclusive as concluídas ou em andamento, serão excluídas definitivamente.</p>
-            <p>Os cadastros das tarefas não serão alterados e a agenda poderá ser gerada novamente.</p>
+            <p>Os cadastros das tarefas não serão alterados. Nenhuma exclusão persistente será criada ou removida; se já existirem exclusões, a geração as informará. A agenda poderá ser gerada novamente.</p>
             <p class="form-alert error" *ngIf="modalError">{{ modalError }}</p>
             <footer><button type="button" class="secondary-button" [disabled]="acting" (click)="closeModal()">Cancelar</button><button type="button" class="danger-button" [disabled]="acting" (click)="clearMonth()">{{ acting ? 'Limpando…' : 'Limpar agenda do mês' }}</button></footer>
           </ng-container>
@@ -105,6 +105,7 @@ type DayEventLayout = {
               <tp-icon name="warning"></tp-icon><p class="eyebrow">Limpeza de agenda</p><h2>Excluir desta data?</h2>
               <p>A ocorrência de <strong>{{ selected.task.name }}</strong> em {{ selected.scheduledDate | date:'dd/MM/yyyy' }} será removida apenas desta agenda.</p>
               <p>O cadastro da tarefa e as demais ocorrências não serão alterados.</p>
+              <p>Esta ação cria uma exclusão persistente para a data original: uma nova geração não a recriará. Para reiniciar toda a agenda de um mês de testes, use <strong>Limpar agenda do mês</strong>.</p>
               <p class="form-alert error" *ngIf="modalError">{{ modalError }}</p>
               <footer><button type="button" class="secondary-button" [disabled]="acting" (click)="modal = 'details'">Voltar</button><button type="button" class="danger-button" [disabled]="acting" (click)="deleteFromAgenda()">{{ acting ? 'Excluindo…' : 'Excluir desta data' }}</button></footer>
             </ng-container>

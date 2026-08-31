@@ -1422,7 +1422,7 @@ O escopo opcional `future` remove a ocorrência selecionada e as posteriores da 
 
 ### `DELETE /api/task-occurrences/month?month=YYYY-MM`
 
-Apenas administradores podem executar esta operação. Ela exclui definitivamente todas as ocorrências cuja data agendada pertença ao mês informado, inclusive ocorrências em andamento ou finalizadas. Os cadastros das tarefas não são excluídos e podem gerar novas ocorrências posteriormente. A operação é registrada na auditoria.
+Apenas administradores podem executar esta operação. Ela exclui definitivamente todas as ocorrências cuja data agendada pertença ao mês informado, inclusive ocorrências em andamento ou finalizadas. Os cadastros das tarefas não são excluídos e podem gerar novas ocorrências posteriormente. Diferentemente de `scope=current`, esta operação não cria exclusões persistentes; também não remove exclusões persistentes já existentes. Use-a para reiniciar uma agenda de teste antes de gerá-la novamente e confira `occurrencesExcluded` no resultado da geração. A operação é registrada na auditoria.
 
 Exemplo de resposta:
 
