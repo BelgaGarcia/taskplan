@@ -5,6 +5,8 @@ import { provideRouter } from '@angular/router';
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routes';
 import { authInterceptor } from './app/core/auth.interceptor';
+import { initializeTheme } from './app/core/theme.service';
 
+initializeTheme(document);
 bootstrapApplication(AppComponent, { providers: [provideRouter(routes), provideHttpClient(withInterceptors([authInterceptor]))] })
   .catch((error: unknown) => console.error(error));
