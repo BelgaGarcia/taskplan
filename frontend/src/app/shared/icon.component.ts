@@ -6,7 +6,7 @@ export const iconNames = [
   'holiday', 'users', 'briefcase', 'shield', 'report', 'settings', 'menu',
   'search', 'bell', 'chevron-left', 'chevron-right', 'chevron-down', 'plus',
   'filter', 'close', 'edit', 'eye', 'play', 'check', 'rotate', 'logout',
-  'clock', 'warning', 'more', 'key',
+  'clock', 'warning', 'more', 'key', 'moon', 'sun',
 ] as const;
 
 export type IconName = (typeof iconNames)[number];
@@ -46,6 +46,8 @@ const symbols: Record<IconName, IconSymbol> = {
   warning: { paths: ['M12 3 22 20H2L12 3zm0 6v4m0 3h.01'] },
   more: { paths: ['M5 12h.01M12 12h.01M19 12h.01'] },
   key: { paths: ['M15 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm-5 5h10M17 12v3M20 12v2'] },
+  moon: { paths: ['M20.5 15.1A8.5 8.5 0 0 1 8.9 3.5 8.5 8.5 0 1 0 20.5 15.1z'] },
+  sun: { paths: ['M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z'] },
 };
 
 @Component({

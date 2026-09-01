@@ -17,12 +17,14 @@ for (const viewport of viewports) {
     const email = page.getByLabel('E-mail');
     const password = page.getByLabel('Senha');
     const submit = page.getByRole('button', { name: 'Entrar no TaskPlan' });
+    const themeToggle = page.getByRole('button', { name: 'Ativar tema escuro' });
 
     await expect(intro).toBeVisible();
     await expect(card).toBeVisible();
     await expect(email).toBeVisible();
     await expect(password).toBeVisible();
     await expect(submit).toBeVisible();
+    await expect(themeToggle).toBeVisible();
     await submit.scrollIntoViewIfNeeded();
 
     const [introBox, cardBox, emailBox, passwordBox, submitBox, scrollWidth] = await Promise.all([
@@ -45,6 +47,13 @@ for (const viewport of viewports) {
       expect(control.x).toBeGreaterThanOrEqual(0);
       expect(control.x + control.width).toBeLessThanOrEqual(viewport.width + 1);
     }
+
+    await themeToggle.click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(page.getByRole('button', { name: 'Ativar tema claro' })).toHaveAttribute('aria-pressed', 'true');
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(page.getByRole('button', { name: 'Ativar tema claro' })).toBeVisible();
 
     if (viewport.width <= 760) {
       expect(cardBox!.y).toBeGreaterThanOrEqual(introBox!.y + introBox!.height - 1);
