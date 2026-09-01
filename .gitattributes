@@ -1,0 +1,2 @@
+# Keep this focused Jest spec as a UTF-8 text file with LF endings on every platform.
+/backend/src/modules/dashboard/dashboard.service.spec.ts text eol=lf

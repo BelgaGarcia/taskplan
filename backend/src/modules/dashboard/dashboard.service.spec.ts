@@ -13,7 +13,7 @@ const occurrence = (id: string) => ({
 });
 
 describe('DashboardService', () => {
-  it('uses today.occurrences and decorates team items with canOperate', async () => {
+  it('builds totals, today and next occurrences with canOperate', async () => {
     const count = jest
       .fn()
       .mockResolvedValueOnce(2)
@@ -37,7 +37,15 @@ describe('DashboardService', () => {
       positionId: null,
     });
 
+    expect(summary.totals).toEqual({
+      pending: 2,
+      inProgress: 3,
+      completed: 5,
+      failed: 7,
+      overdue: 11,
+    });
     expect(summary.today.total).toBe(1);
+    expect(summary.today.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(summary.today.occurrences[0]).toEqual(
       expect.objectContaining({ id: 'today-occurrence', canOperate: false }),
     );
